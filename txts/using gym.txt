@@ -1,0 +1,14 @@
+https://github.com/nikuya3/pokebattle-rl-env
+
+https://github.com/hsahovic/poke-env/blob/master/examples/rl_with_open_ai_gym_wrapper.py
+
+https://poke-env.readthedocs.io/en/latest/rl_with_open_ai_gym_wrapper.html#rl-with-open-ai-gym-wrapper
+
+https://github.com/hsahovic/poke-env/blob/master/examples/gen7/rl_with_open_ai_gym_wrapper.py
+
+https://github.com/hsahovic/poke-env/issues/119#issuecomment-763526219
+
+https://github.com/hsahovic/poke-env/issues/96
+
+https://github.com/hsahovic/poke-env/issues/73
+

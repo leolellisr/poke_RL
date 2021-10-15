@@ -1,0 +1,4 @@
+qn_logs/
+.neptune/
+.ipynb_checkpoints/
+old runs/
