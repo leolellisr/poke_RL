@@ -6,3 +6,12 @@ Player with N0=0.600000 and gamma=0.010000 won 1110 / 1500 battles [this is 74.0
 Player with N0=1.000000 and gamma=0.100000 won 1164 / 1500 battles [this is 77.600000 percent and took 432.430000 seconds]
 Player with N0=1.000000 and gamma=0.250000 won 963 / 1500 battles [this is 64.200000 percent and took 439.640000 seconds]
 Player with N0=1.000000 and gamma=0.750000 won 955 / 1500 battles [this is 63.670000 percent and took 461.230000 seconds]
+
+Player with N0=0.250000 and gamma=0.250000 won 1086 / 500 battles [this is 2.170000 percent and took 122.060000 seconds]
+Player with N0=0.400000 and gamma=0.200000 won 1047 / 500 battles [this is 2.090000 percent and took 82.440000 seconds]
+Player with N0=0.400000 and gamma=0.100000 won 1103 / 500 battles [this is 2.210000 percent and took 73.250000 seconds]
+Player with N0=0.200000 and gamma=0.200000 won 864 / 500 battles [this is 1.730000 percent and took 78.170000 seconds]
+Player with N0=0.100000 and gamma=0.500000 won 1059 / 500 battles [this is 2.120000 percent and took 77.450000 seconds]
+Player with N0=0.100000 and gamma=0.200000 won 42 / 500 battles [this is 0.080000 percent and took 85.910000 seconds]
+Player with N0=0.200000 and gamma=0.200000 won 1073 / 500 battles [this is 2.150000 percent and took 89.890000 seconds]
+Player with N0=1.000000 and gamma=0.100000 won 32 / 500 battles [this is 0.060000 percent and took 81.290000 seconds]
