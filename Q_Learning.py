@@ -2,26 +2,30 @@
 
 import asyncio
 import os
+import re
 from datetime import date
 
 import json
+import matplotlib
 import neptune.new as neptune
 import numpy as np
+import pandas as pd
 import time
 
 from collections import defaultdict
 from itertools import product
+from matplotlib import pyplot
 from poke_env.environment.abstract_battle import AbstractBattle
 from poke_env.player.battle_order import ForfeitBattleOrder
 from poke_env.player.player import Player
 # from poke_env.player.random_player import RandomPlayer
+from scipy.interpolate import griddata
 from src.PlayerQLearning import Player as PlayerQLearning
 
 # global configs
-
 debug = True
 save_to_json_file = True
-use_validation = True
+use_validation = False
 use_neptune = False
 
 np.random.seed(0)
@@ -30,7 +34,6 @@ if use_neptune:
     run = neptune.init(project='project', api_token='token')
 
 # our team
-
 OUR_TEAM = """
 Pikachu-Original (M) @ Light Ball  
 Ability: Static  
@@ -173,7 +176,6 @@ NAME_TO_ID_DICT = {
 
 
 # Max-damage player
-
 class MaxDamagePlayer(Player):
     def choose_move(self, battle):
         if battle.available_moves:
@@ -184,7 +186,6 @@ class MaxDamagePlayer(Player):
 
 
 # Q-learning player
-
 class QLearningPlayer(PlayerQLearning):
     def __init__(self, battle_format, team, n0, gamma):
         super().__init__(battle_format=battle_format, team=team)
@@ -281,11 +282,11 @@ class QLearningPlayer(PlayerQLearning):
             self,
             battle: AbstractBattle,
             *,
-            fainted_value: float = 0.0,
-            hp_value: float = 0.0,
+            fainted_value: float = 0.15,
+            hp_value: float = 0.15,
             number_of_pokemons: int = 6,
             starting_value: float = 0.0,
-            status_value: float = 0.0,
+            status_value: float = 0.15,
             victory_value: float = 1.0
     ) -> float:
         # 1st compute
@@ -329,12 +330,11 @@ class QLearningPlayer(PlayerQLearning):
 
     # Calling reward_computing_helper
     def compute_reward(self, battle) -> float:
-        return self.reward_computing_helper(battle, fainted_value=2, hp_value=1, victory_value=30)
+        return self.reward_computing_helper(battle, fainted_value=2, hp_value=1, victory_value=15)
 
 
-# Q-learning validation player
-
-class QLearningValidationPlayer(PlayerQLearning):
+# validation player
+class ValidationPlayer(PlayerQLearning):
     def __init__(self, battle_format, team, Q):
         super().__init__(battle_format=battle_format, team=team)
         self.Q = Q
@@ -400,11 +400,10 @@ class QLearningValidationPlayer(PlayerQLearning):
 
 
 # global parameters
-
 # possible values for num_battles (number of episodes)
-n_battles_array = [100, 1000, 10000]
+n_battles_array = [10, 1000, 10000]
 # exploration schedule from MC, i. e., epsilon(t) = N0 / (N0 + N(S(t)))
-n0_array = [0.05, 0.1, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.75, 1, 2, 5, 10, 25, 50, 100]
+n0_array = [0.05, 0.1, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.75, 1, 2, 5, 10]
 # possible values for gamma (discount factor)
 gamma_array = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 
@@ -417,30 +416,41 @@ list_of_params = [
 ]
 
 
-# main
+# json helper functions
+def save_dict_to_json(path_dir, filename, data, append=True):
+    if not os.path.exists(path_dir):
+        os.makedirs(path_dir)
+    full_filename = path_dir + "/" + filename
+    if os.path.exists(full_filename) and append:
+        with open(full_filename, "r") as file:
+            value_dict = json.load(file)
+            for key in data:
+                value_dict[key] = data[key] if isinstance(data[key], list) else data[key].tolist()
+            file.close()
+    else:
+        value_dict = dict()
+        for key in data:
+            value_dict[key] = data[key] if isinstance(data[key], list) else data[key].tolist()
+    # write
+    with open(full_filename, "w") as file:
+        json.dump(value_dict, file)
+        file.close()
 
-# helper function: save to json file
-def save_to_json(path, params, name, value):
-    today_s = str(date.today())
-    n_battle_s = str(params['n_battles'])
-    n0_s = str(round(params['n0'], 2))
-    gamma_s = str(round(params['gamma'], 2))
-    winning_percentage_s = str(round((params['player'].n_won_battles / params['n_battles']) * 100, 2))
-    if not os.path.exists(path):
-        os.makedirs(path)
-    filename = path + "/" + name + "_QLearning_" + today_s + "_n_battles_" + n_battle_s + "_N0_" + n0_s + "_gamma_" + gamma_s + "_wining_" + winning_percentage_s + ".json "
-    file = open(filename, "w")
-    value_dict = dict()
-    for key in value:
-        value_dict[key] = value[key].tolist()
-    json.dump(value_dict, file)
+
+def read_dict_from_json(path_dir, filename):
+    full_filename = path_dir + "/" + filename
+    if not os.path.exists(full_filename):
+        return dict()
+    file = open(full_filename, "r")
+    data = json.load(file)
     file.close()
+    return data
 
 
-# let's battle!
-async def do_battle():
+# main (let's battle!)
+# training
+async def do_battle_training():
     for params in list_of_params:
-        # training
         start = time.time()
         if use_neptune:
             run['params'] = params
@@ -448,7 +458,7 @@ async def do_battle():
         params['opponent'] = MaxDamagePlayer(battle_format="gen8ou", team=OP_TEAM)
         await params['player'].battle_against(opponent=params['opponent'], n_battles=params['n_battles'])
         if debug:
-            print("training: num battles (episodes)=%d, N0=%f, gamma=%f, wins=%d, winning percentage=%f, total time=%s seconds" %
+            print("training: num battles (episodes)=%d, N0=%f, gamma=%f, wins=%d, winning %%=%f, total time=%s sec" %
                   (
                       params['n_battles'],
                       round(params['n0'], 2),
@@ -457,27 +467,173 @@ async def do_battle():
                       round((params['player'].n_won_battles / params['n_battles']) * 100, 2),
                       round(time.time() - start, 2)
                   ))
-        if save_to_json_file:
-            # save Q to json file
-            save_to_json("./dump", params, "Q", params['player'].Q)
 
-        # validation (play 1/3 of the battles using Q-learned table)
-        start = time.time()
-        if use_validation:
-            params['validation_player'] = QLearningValidationPlayer(battle_format="gen8ou", team=OUR_TEAM, Q=params['player'].Q)
-            n_battles = int(params['n_battles'] / 3)
-            await params['validation_player'].battle_against(opponent=params['opponent'], n_battles=n_battles)
-            if debug:
-                print("validation: num battles (episodes)=%d, N0=%f, gamma=%f, wins=%d, winning percentage=%f, total time=%s seconds" %
-                      (
-                          n_battles,
-                          round(params['n0'], 2),
-                          round(params['gamma'], 2),
-                          params['validation_player'].n_won_battles,
-                          round((params['validation_player'].n_won_battles / n_battles) * 100, 2),
-                          round(time.time() - start, 2)
-                      ))
+        # save Q to json file
+        if save_to_json_file:
+            today_s = str(date.today())
+            n_battle_s = str(params['n_battles'])
+            n0_s = str(round(params['n0'], 8))
+            gamma_s = str(round(params['gamma'], 8))
+            winning_percentage_s = str(round((params['player'].n_won_battles / params['n_battles']) * 100, 2))
+            filename = "Q_" + today_s + "_" + n_battle_s + "_" + n0_s + "_" + gamma_s + "_" + winning_percentage_s + ".json"
+            save_dict_to_json("./Q_Table", filename, params['player'].Q, False)
+
+        # statistics: key: "n_battles, n0, gamma", values: list of win or lose
+        key = str(params['n_battles']) + "_" + str(round(params['n0'], 2)) + "_" + str(round(params['gamma'], 2))
+        winning_status = list()
+        for battle in params['player']._battles.values():
+            if battle.won:
+                winning_status.append(True)
+            else:
+                winning_status.append(False)
+        # save statistics json file (append)
+        data = dict()
+        data[key] = winning_status
+        save_dict_to_json("./statistics", "statistics.json", data)
+
 
 loop = asyncio.get_event_loop()
-loop.run_until_complete(loop.create_task(do_battle()))
+loop.run_until_complete(loop.create_task(do_battle_training()))
 
+
+# plotting helper functions
+def plot_2d(path, title, x_label, x_array, y_label, y_array):
+    # set labels and plot surface
+    figure = matplotlib.pyplot.figure(figsize=(20, 10))
+    ax = figure.gca()
+    ax.set_title(title)
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    ax.plot(x_array, y_array)
+    # pyplot.show()
+    if not os.path.exists(path):
+        os.makedirs(path)
+    filename = path + "/" + title + "_" + x_label + "_" + y_label + "_" + ".pdf"
+    figure.savefig(filename, dpi=figure.dpi)
+    pyplot.close(figure)
+
+
+def plot_3d(path, title, x_label, x_array, y_label, y_array, z_label, z_array):
+    xyz = {'x': x_array, 'y': y_array, 'z': z_array}
+    df = pd.DataFrame(xyz, index=range(len(xyz['x'])))
+    xv, yv = np.meshgrid(x_array, y_array)
+    zv = griddata((df['x'], df['y']), df['z'], (xv, yv), method='nearest')
+    # set labels and plot surface
+    figure = matplotlib.pyplot.figure(figsize=(20, 10))
+    ax = figure.gca(projection='3d')
+    ax.set_title(title)
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    ax.set_zlabel(z_label)
+    surface = ax.plot_surface(xv, yv, zv, rstride=1, cstride=1, cmap=matplotlib.cm.coolwarm, linewidth=0,
+                              antialiased=False)
+    figure.colorbar(surface)
+    # pyplot.show()
+    if not os.path.exists(path):
+        os.makedirs(path)
+    filename = path + "/" + title + ".pdf"
+    figure.savefig(filename, dpi=figure.dpi)
+    pyplot.close(figure)
+
+
+# plot value from state-action pair
+def plot_v_from_state_action_json(path_dir, x_label, x_func, y_label, y_func):
+    # open files
+    for filename in os.listdir(path_dir):
+        q = dict()
+        q_json = read_dict_from_json(path_dir, filename)
+        for key in q_json.keys():
+            q[key] = np.array(q_json[key])
+        x_values = []
+        y_values = []
+        z_values = []
+        # for state, actions
+        for state, actions in q.items():
+            state = re.sub(r"[,!?><:'\[\]()@*~#]", "", state)
+            key_float = [float(k) for k in state.split()]
+            x_emb = x_func(key_float)
+            x_values.append(x_emb)
+            y_emb = y_func(key_float)
+            y_values.append(y_emb)
+            action_value = np.max(actions)
+            z_values.append(action_value)
+        # plot 3D
+        title = "v_from_" + filename
+        plot_3d("./plot", title, x_label, x_values, y_label, y_values, "V", z_values)
+
+
+# plots from Q
+plot_v_from_state_action_json(path_dir="./Q_Table",
+                              x_label="20 * index_pokemon + sum(moves_base_power * moves_dmg_multiplier)",
+                              x_func=lambda k: 20 * k[0] + k[1] * k[5] + k[2] * k[6] + k[3] * k[7] + k[4] * k[8],
+                              y_label="remaining_mon_team - remaining_mon_opponent",
+                              y_func=lambda k: k[8] - k[9])
+
+
+# plot additional statistics
+def plot_statistics_json(path_dir, filename="statistics.json"):
+    # plots from statistics.json
+    statistics = read_dict_from_json(path_dir, filename)
+    # win/lost vs. episode number
+    for key in statistics.keys():
+        key_elements = key.split("_")
+        n_battles = key_elements[0]
+        n0 = key_elements[1]
+        gamma = key_elements[2]
+        value = statistics[key]
+        plot_2d(path="./plot",
+                title="victory_n_battles_" + n_battles + "_N0_" + n0 + "_gamma_" + gamma,
+                x_label="episodes",
+                x_array=np.array(range(0, len(value))),
+                y_label="victory",
+                y_array=np.array(value).astype(int))
+
+    # winning % by set of parameters
+    n_battles = ""
+    x_values = []
+    y_values = []
+    z_values = []
+    for key in statistics.keys():
+        key_elements = key.split("_")
+        n_battles = key_elements[0]
+        n0 = key_elements[1]
+        gamma = key_elements[2]
+        value = statistics[key]
+        x_values.append(n0)
+        y_values.append(gamma)
+        z_values.append(value.count(True) / len(value))
+    plot_3d(path="./plot",
+            title="winning_percentage_n_battles_" + n_battles,
+            x_label="N0",
+            x_array=np.array(x_values).astype(np.float),
+            y_label="gamma",
+            y_array=np.array(y_values).astype(np.float),
+            z_label="winning %",
+            z_array=np.array(z_values))
+
+
+# plots from statistics
+plot_statistics_json("./statistics")
+
+
+# validation
+async def do_battle_validation():
+    for params in list_of_params:
+        # validation (play 1/3 of the battles using Q-learned table)
+        start = time.time()
+        params['validation_player'] = ValidationPlayer(battle_format="gen8ou", team=OUR_TEAM, Q=params['player'].Q)
+        n_battles = int(params['n_battles'] / 3)
+        await params['validation_player'].battle_against(opponent=params['opponent'], n_battles=n_battles)
+        print("training: num battles (episodes)=%d, N0=%f, gamma=%f, wins=%d, winning %%=%f, total time=%s sec" %
+              (
+                  n_battles,
+                  round(params['n0'], 2),
+                  round(params['gamma'], 2),
+                  params['validation_player'].n_won_battles,
+                  round((params['validation_player'].n_won_battles / n_battles) * 100, 2),
+                  round(time.time() - start, 2)
+              ))
+
+if use_validation:
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(loop.create_task(do_battle_validation()))
