@@ -535,8 +535,11 @@ class Player(PlayerNetwork, ABC):
             )
 
         if available_orders:
-            return available_orders[int(random.random() * len(available_orders))]
+            rand_num = int(random.random() * len(available_orders))
+            self.previous_action = rand_num
+            return available_orders[rand_num]
         else:
+            print('default')
             return self.choose_default_move(battle)
 
     def choose_random_move(self, battle: AbstractBattle) -> BattleOrder:
