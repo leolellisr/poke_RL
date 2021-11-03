@@ -42,17 +42,27 @@ from collections import defaultdict
 import numpy as np
 np.random.seed(0)
 
-def make_epsilon_greedy_policy(estimator, n0, N):
-    def policy_fn(state):
-        nA = 4+5
-        epsilon = n0/(n0+np.sum(N[str(state)]))
-        probs = np.ones(nA, dtype=float) * epsilon / nA
-        q_values = estimator.predict(state)
-        greedy_action = np.argmax(q_values)
-        probs[greedy_action] += 1 - epsilon
-        return probs
-    return policy_fn
+def make_epsilon_greedy_policy(w, n0, N):
+    def x(state, action):
+        state = np.array(state).astype(float)
+        return np.append(state, action)
 
+    def q_approx_fn(state, action, w):
+        state = np.array(state).astype(float)
+        return np.dot(x(state, action), w)
+
+    # epsilon-greedy policy
+    def policy_fn(state):
+        epsilon = n0 / (n0 + np.sum(N[str(state)]))
+        # let's get the greedy action. Ties must be broken arbitrarily
+        q_approx = np.array([q_approx_fn(state, action, w) for action in range(9)])
+        greedy_action = np.argmax(q_approx)
+        action_pick_probability = np.full(9, epsilon / 9)
+        action_pick_probability[greedy_action] += 1 - epsilon
+        return action_pick_probability
+
+    return policy_fn
+    
 class Player(PlayerNetwork, ABC):
     """
     Base class for players.
@@ -77,7 +87,6 @@ class Player(PlayerNetwork, ABC):
         start_listening: bool = True,
         n0: float = 0.5,
         gamma: float = 0,
-        estimator = None, 
         team: Optional[Union[str, Teambuilder]] = None,
     ) -> None:
         """
@@ -145,11 +154,11 @@ class Player(PlayerNetwork, ABC):
         self.logger.debug("Player initialisation finished")
         self.action_space = list(range(4 + 5))
         #self.Q = defaultdict(lambda: np.zeros(len(self.action_space)))
-        self.estimator = estimator
+        self.w = np.random.rand(13)
         self.N = defaultdict(lambda: np.zeros(len(self.action_space)))
         self.n0 = n0
         self.gamma = gamma
-        self.policy = make_epsilon_greedy_policy(self.estimator, self.n0, self.N)
+        self.policy = make_epsilon_greedy_policy(self.w, self.n0, self.N)
         self.episode = []
 #        self.reward_per_battle = []
 #        self.all_rewards = []
@@ -160,15 +169,26 @@ class Player(PlayerNetwork, ABC):
         self.aux = 0
         self.discount_factor = 1
         
-    def update_epsilon_greedy_policy(self, estimator, n0, N):
+    def update_epsilon_greedy_policy(self, w, n0, N):
+        def x(state, action):
+            state = np.array(state).astype(float)
+            return np.append(state, action)
+
+        def q_approx_fn(state, action, w):
+            state = np.array(state).astype(float)
+            
+            return np.dot(x(state, action), w)
+
+        # epsilon-greedy policy
         def policy_fn(state):
-            nA = 4+5
-            epsilon = n0/(n0+np.sum(N[str(state)]))
-            probs = np.ones(nA, dtype=float) * epsilon / nA
-            q_values = estimator.predict(state)
-            greedy_action = np.argmax(q_values)
-            probs[greedy_action] += 1 - epsilon
-            return probs
+            epsilon = n0 / (n0 + np.sum(N[str(state)]))
+            # let's get the greedy action. Ties must be broken arbitrarily
+            q_approx = np.array([q_approx_fn(state, action, w) for action in range(9)])
+            greedy_action = np.argmax(q_approx)
+            action_pick_probability = np.full(9, epsilon / 9)
+            action_pick_probability[greedy_action] += 1 - epsilon
+            return action_pick_probability
+
         return policy_fn
 
     def _battle_finished_callback(self, battle: AbstractBattle) -> None:
