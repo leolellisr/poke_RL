@@ -26,12 +26,14 @@ from src.PlayerQLearning import Player as PlayerQLearning
 debug = True
 save_to_json_file = True
 use_validation = True
-use_neptune = False
+use_neptune = True
 
 np.random.seed(0)
 
 if use_neptune:
-    run = neptune.init(project='project', api_token='token')
+    run = neptune.init(project='leolellisr/rl-pokeenv',
+                       api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI1NjY1YmJkZi1hYmM5LTQ3M2QtOGU1ZC1iZTFlNWY4NjE1NDQifQ==',
+                       tags=["Henrique", "Q-learning"])
 
 # our team
 
@@ -229,7 +231,8 @@ class QLearningPlayer(PlayerQLearning):
             return self.choose_random_move(battle)
 
     def _battle_finished_callback(self, battle):
-        pass
+        if use_neptune:
+            run[f'N0: {self.n0} gamma: {self.gamma} win_acc'].log(self.n_won_battles / len(self._reward_buffer))
 
     ''' Helper functions '''
 
@@ -326,6 +329,8 @@ class QLearningPlayer(PlayerQLearning):
         # Value to return
         to_return = current_value - self._reward_buffer[battle]
         self._reward_buffer[battle] = current_value
+        if use_neptune:
+            run[f'N0: {self.n0} gamma: {self.gamma} reward_buffer'].log(current_value)
         return to_return
 
     # Calling reward_computing_helper
@@ -380,10 +385,10 @@ class ValidationPlayer(PlayerQLearning):
                 )
 
         # We count how many pokemons have not fainted in each team
-        remaining_mon_team = (
+        fainted_mon_team = (
             len([mon for mon in battle.team.values() if mon.fainted])
         )
-        remaining_mon_opponent = (
+        fainted_mon_opponent = (
             len([mon for mon in battle.opponent_team.values() if mon.fainted])
         )
 
@@ -394,8 +399,8 @@ class ValidationPlayer(PlayerQLearning):
             state.append('{0:.2f}'.format(move_base_power))
         for move_dmg_multiplier in moves_dmg_multiplier:
             state.append('{0:.2f}'.format(move_dmg_multiplier))
-        state.append(remaining_mon_team)
-        state.append(remaining_mon_opponent)
+        state.append(fainted_mon_team)
+        state.append(fainted_mon_opponent)
 
         return str(state)
 
@@ -403,11 +408,11 @@ class ValidationPlayer(PlayerQLearning):
 # global parameters
 
 # possible values for num_battles (number of episodes)
-n_battles_array = [1500]
+n_battles_array = [1000, 10000]
 # exploration schedule from MC, i. e., epsilon(t) = N0 / (N0 + N(S(t)))
-n0_array = [0.0001, 0.001, 0.01, 0.05, 0.1, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.75, 1, 2, 5, 10]
+n0_array = [0.0001, 0.001, 0.01]
 # possible values for gamma (discount factor)
-gamma_array = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+gamma_array = [0.75]
 
 list_of_params = [
     {
@@ -456,6 +461,8 @@ def read_dict_from_json(path_dir, filename):
 async def do_battle_training():
     for params in list_of_params:
         start = time.time()
+        if use_neptune:
+            run['params'] = params
         params['player'] = QLearningPlayer(battle_format="gen8ou", team=OUR_TEAM, n0=params['n0'], gamma=params['gamma'])
         params['opponent'] = MaxDamagePlayer(battle_format="gen8ou", team=OP_TEAM)
         await params['player'].battle_against(opponent=params['opponent'], n_battles=params['n_battles'])
@@ -492,6 +499,8 @@ async def do_battle_training():
         data = dict()
         data[key] = winning_status
         save_dict_to_json("./Q_Learning_statistics", "statistics.json", data)
+    if use_neptune:
+        run.stop()
 
 
 loop = asyncio.get_event_loop()
