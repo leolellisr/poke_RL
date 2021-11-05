@@ -8,12 +8,12 @@ For training, it is necessary to run Pokémon Showdown <https://play.pokemonshow
 * [Pokémon](https://www.pokemon.com) is a popular Japanese RPG (Role Playing Game) which stands a world championship every year; 
 * One single [battle](https://bulbapedia.bulbagarden.net/wiki/Pokémon_battle) of Pokémon has two players. Each player has a 6-Pokémon team; 
 * Each Pokémon has:
- * 6 [stats](https://bulbapedia.bulbagarden.net/wiki/Stat) (Health Points, Attack, Defense, Special Attack, Special Defense, Speed). The first 5 are used in the damage calculation. The speed defined which Pokémon moves first in the turn.
-  * The Health Points goes from 100% (healthy) to 0% (fainted);
- * 4 possible moves (each with a limited number of uses);
- * one [ability](https://bulbapedia.bulbagarden.net/wiki/Ability) that has special effects in the field;
- * one [nature](https://bulbapedia.bulbagarden.net/wiki/Nature) that specifies which stats are higher and which are lower;
- * one [item](https://bulbapedia.bulbagarden.net/wiki/Item), that can  restore Health Points or increase the Power of an Attack.
+ ** 6 [stats](https://bulbapedia.bulbagarden.net/wiki/Stat) (Health Points, Attack, Defense, Special Attack, Special Defense, Speed). The first 5 are used in the damage calculation. The speed defined which Pokémon moves first in the turn.
+ ** The Health Points goes from 100% (healthy) to 0% (fainted);
+ ** 4 possible moves (each with a limited number of uses);
+ ** one [ability](https://bulbapedia.bulbagarden.net/wiki/Ability) that has special effects in the field;
+ ** one [nature](https://bulbapedia.bulbagarden.net/wiki/Nature) that specifies which stats are higher and which are lower;
+ ** one [item](https://bulbapedia.bulbagarden.net/wiki/Item), that can  restore Health Points or increase the Power of an Attack.
 * The winner of the battle is the player that makes all Pokémon of the oposing team to faint (all oposing Pokémon with health points equals zero, "last man standing" criteria);
 * Only one Pokémon of each team can be at the battle field at the same time;
 * Every turn, each players select one action: one of the 4 moves of their active Pokémon or [switching](https://bulbapedia.bulbagarden.net/wiki/Recall) for one of other non-fainted Pokémon of their team;
@@ -21,8 +21,8 @@ For training, it is necessary to run Pokémon Showdown <https://play.pokemonshow
 * Pokémon can be summarized as an analyze state (turn) -> take action sequence game. 
 
 * By standard, Pokémon is a stochastic game:
- * One move can have an accuracy value less than 100%, then this move has a probability to be missed;
- * The damage moves (attacks) have the following [damage calculation](https://bulbapedia.bulbagarden.net/wiki/Damage):
+ ** One move can have an accuracy value less than 100%, then this move has a probability to be missed;
+ ** The damage moves (attacks) have the following [damage calculation](https://bulbapedia.bulbagarden.net/wiki/Damage):
   ![Damage](https://wikimedia.org/api/rest_v1/media/math/render/svg/b8c51fed93bb9a80ae8febc13700a40b8a5da402)
   
  where:
@@ -39,8 +39,8 @@ For training, it is necessary to run Pokémon Showdown <https://play.pokemonshow
   * **other** is 1 in most cases, and a different multiplier when specific interactions of moves, Abilities, or items take effect. In this work, this is applied just to Pokémon that has the item **Life Orb**, which multiplies the damage by 1.3.
   
   * **Not** used in this work (equals 1):
-   * Targets (for Battles with more than two active Pokémon in the field);
-   * Badge ( just applied in Generation II);
+   ** Targets (for Battles with more than two active Pokémon in the field);
+   ** Badge ( just applied in Generation II);
    
    # **MDP formulation and discretization model** 
 
@@ -48,41 +48,41 @@ For training, it is necessary to run Pokémon Showdown <https://play.pokemonshow
 
 We considered our original (stochastic) MDP as a tuple $M = (S, A, \phi, R)$, where:
 * **S** is the whole set of possible states. One state **s $\in$ S**  is defined at each turn with 12 battle elements concatenated, that correspond to:
- * [0] Our Active Pokémon index (0: Venusaur,  1: Pikachu, 2: Tauros, 3: Sirfetch'd, 4: Blastoise, 5: Charizard);
- * [1] Opponent Active Pokémon index (0: Eevee,  1: Vaporeon, 2: Leafeon, 3: Sylveon, 4: Jolteon, 5: Umbreon);
- * [2-5] Active Pokémon moves base power (if a move doesn't have base power, default to -1);
- * [6-9] Active Pokémon moves damage multipliers;
- * [10] Our remaining Pokémon;
- * [11] Opponent remaining Pokémon.
+ ** [0] Our Active Pokémon index (0: Venusaur,  1: Pikachu, 2: Tauros, 3: Sirfetch'd, 4: Blastoise, 5: Charizard);
+ ** [1] Opponent Active Pokémon index (0: Eevee,  1: Vaporeon, 2: Leafeon, 3: Sylveon, 4: Jolteon, 5: Umbreon);
+ ** [2-5] Active Pokémon moves base power (if a move doesn't have base power, default to -1);
+ ** [6-9] Active Pokémon moves damage multipliers;
+ ** [10] Our remaining Pokémon;
+ ** [11] Opponent remaining Pokémon.
  
 * **A** is the whole set of possible actions. Our action space is a range [0, 8]. One action **a $\in$ A** is one of the possible choices:
- * [0] 1st Active Pokémon move;
- * [1] 2nd Active Pokémon move;
- * [2] 3rd Active Pokémon move;
- * [3] 4th Active Pokémon move;
- * [4] Switch to 1st next Pokémon;
- * [5] Switch to 2nd next Pokémon;
- * [6] Switch to 3rd next Pokémon;
- * [7] Switch to 4th next Pokémon;
- * [8] Switch to 5th next Pokémon.
+ ** [0] 1st Active Pokémon move;
+ ** [1] 2nd Active Pokémon move;
+ ** [2] 3rd Active Pokémon move;
+ ** [3] 4th Active Pokémon move;
+ ** [4] Switch to 1st next Pokémon;
+ ** [5] Switch to 2nd next Pokémon;
+ ** [6] Switch to 3rd next Pokémon;
+ ** [7] Switch to 4th next Pokémon;
+ ** [8] Switch to 5th next Pokémon.
 
 When a selected action cannot be executed, we random select another possible action.
 
 * **$\phi$** is a stochastic transition function that occurs from state **s** to state **s'**, by taking an action **a**. The following parameters are part of our  stochastic transition function:
- * Move's accuracy (chance of the move successfully occurs or to fail);
- * Damage calculation: The **[Critical](https://bulbapedia.bulbagarden.net/wiki/Critical_hit)** parameter (6.25% chance of occurs) and the **random** parameter, ranging from 0.85 and 1.00 (inclusive).
+ ** Move's accuracy (chance of the move successfully occurs or to fail);
+ ** Damage calculation: The **[Critical](https://bulbapedia.bulbagarden.net/wiki/Critical_hit)** parameter (6.25% chance of occurs) and the **random** parameter, ranging from 0.85 and 1.00 (inclusive).
 
 * **R** is a set of rewards. A reward **r $\in$ R** is acquired in state **s** by taking the action **a**. The rewards are calculated at the end of the turn. The value of reward **r** is defined by:
- * +Our Active Pokémon current Health Points;
- * -2 if our Active Pokémon fainted;
- * -1 if our Active Pokémon have a [negative status condition](https://bulbapedia.bulbagarden.net/wiki/Status_condition);
- * +Number of remaining Pokémon in our team;
- * -Opponent Active Pokémon current Health Points;
- * +2 if opponent Active Pokémon fainted;
- * +1 if opponent Active Pokémon have a [negative status condition](https://bulbapedia.bulbagarden.net/wiki/Status_condition);
- * -Number of remaining Pokémon in opponent team;
- * +15 if we won the battle;
- * -15 if we lost the battle.
+ ** +Our Active Pokémon current Health Points;
+ ** -2 if our Active Pokémon fainted;
+ ** -1 if our Active Pokémon have a [negative status condition](https://bulbapedia.bulbagarden.net/wiki/Status_condition);
+ ** +Number of remaining Pokémon in our team;
+ ** -Opponent Active Pokémon current Health Points;
+ ** +2 if opponent Active Pokémon fainted;
+ ** +1 if opponent Active Pokémon have a [negative status condition](https://bulbapedia.bulbagarden.net/wiki/Status_condition);
+ ** -Number of remaining Pokémon in opponent team;
+ ** +15 if we won the battle;
+ ** -15 if we lost the battle.
  
 ### Stochastic Team
 
@@ -92,37 +92,37 @@ Our stochastic team, with each Pokémon, their abilities, natures, items, moves 
 
 To adapt Pokémon to a deterministic environment, we use Pokémon that cannot receive a critical hit, moves with only 100% accuracy and edit the server code to ignore the random parameter in damage calculation, removing the stochastic transition function $\phi$ from our MDP. Therefore, now our MDP is a tuple $M = (S, A, R)$, where:
 * **S** is the whole set of possible states. One state **s $\in$ S**  is defined at each turn with 12 battle elements concatenated, that correspond to:
- * [0] Our Active Pokémon index ;
- * [1] Opponent Active Pokémon index ;
- * [2-5] Active Pokémon moves base power (if a move doesn't have base power, default to -1);
- * [6-9] Active Pokémon moves damage multipliers;
- * [10] Our remaining Pokémon;
- * [11] Opponent remaining Pokémon.
+ ** [0] Our Active Pokémon index ;
+ ** [1] Opponent Active Pokémon index ;
+ ** [2-5] Active Pokémon moves base power (if a move doesn't have base power, default to -1);
+ ** [6-9] Active Pokémon moves damage multipliers;
+ ** [10] Our remaining Pokémon;
+ ** [11] Opponent remaining Pokémon.
  
 * **A** is the whole set of possible actions. Our action space is a range [0, 8] (len: 9). One action **a $\in$ A** is one of the possible choices:
- * [0] 1st Active Pokémon move;
- * [1] 2nd Active Pokémon move;
- * [2] 3rd Active Pokémon move;
- * [3] 4th Active Pokémon move;
- * [4] Switch to 1st next Pokémon;
- * [5] Switch to 2nd next Pokémon;
- * [6] Switch to 3rd next Pokémon;
- * [7] Switch to 4th next Pokémon;
- * [8] Switch to 5th next Pokémon.
+ ** [0] 1st Active Pokémon move;
+ ** [1] 2nd Active Pokémon move;
+ ** [2] 3rd Active Pokémon move;
+ ** [3] 4th Active Pokémon move;
+ ** [4] Switch to 1st next Pokémon;
+ ** [5] Switch to 2nd next Pokémon;
+ ** [6] Switch to 3rd next Pokémon;
+ ** [7] Switch to 4th next Pokémon;
+ ** [8] Switch to 5th next Pokémon.
 
 When a selected action cannot be executed, we random select another possible action.
 
 * **R** is a set of rewards. A reward **r $\in$ R** is acquired in state **s** by taking the action **a**. The rewards are calculated at the end of each turn. The value of reward **r** is defined by:
- * +Our Active Pokémon current Health Points;
- * -2 if our Active Pokémon fainted;
- * -1 if our Active Pokémon have a [negative status condition](https://bulbapedia.bulbagarden.net/wiki/Status_condition);
- * +Number of remaining Pokémon in our team;
- * -Opponent Active Pokémon current Health Points;
- * +2 if opponent Active Pokémon fainted;
- * +1 if opponent Active Pokémon have a [negative status condition](https://bulbapedia.bulbagarden.net/wiki/Status_condition);
- * -Number of remaining Pokémon in opponent team;
- * +15 if we won the battle;
- * -15 if we lost the battle.
+ ** +Our Active Pokémon current Health Points;
+ ** -2 if our Active Pokémon fainted;
+ ** -1 if our Active Pokémon have a [negative status condition](https://bulbapedia.bulbagarden.net/wiki/Status_condition);
+ ** +Number of remaining Pokémon in our team;
+ ** -Opponent Active Pokémon current Health Points;
+ ** +2 if opponent Active Pokémon fainted;
+ ** +1 if opponent Active Pokémon have a [negative status condition](https://bulbapedia.bulbagarden.net/wiki/Status_condition);
+ ** -Number of remaining Pokémon in opponent team;
+ ** +15 if we won the battle;
+ ** -15 if we lost the battle.
  
 ### Deterministic Team
 
@@ -132,27 +132,27 @@ Our deterministic team, with each Pokémon, their abilities, natures, items, mov
 
 The environment used is [Pokémon Showdown](https://play.pokemonshowdown.com), a [open-source](https://github.com/smogon/pokemon-showdown.git) Pokémon battle simulator.
 
-![Example](https://prnt.sc/1y46uqa) of one battle in Pokémon Showdown.
+![Example](https://prnt.sc/1ydofwv) of one battle in Pokémon Showdown.
 
 # **Characteristics of  the problem**
 
 * Both of our environments (stochastic and deterministic) are episodic. One state occurs after another;
 
 * Our terminal states are:
- * When all our Pokémon are fainted (we lose);
- * When all opponent Pokémon are fainted (we won).
+ ** When all our Pokémon are fainted (we lose);
+ ** When all opponent Pokémon are fainted (we won).
 
 * As specified before, a reward **r** is calculated at the end of a turn. The value of reward **r** is defined by:
- * +Our Active Pokémon current Health Points;
- * -2 if our Active Pokémon fainted;
- * -1 if our Active Pokémon have a [negative status condition](https://bulbapedia.bulbagarden.net/wiki/Status_condition);
- * +Number of remaining Pokémon in our team;
- * -Opponent Active Pokémon current Health Points;
- * +2 if opponent Active Pokémon fainted;
- * +1 if opponent Active Pokémon have a [negative status condition](https://bulbapedia.bulbagarden.net/wiki/Status_condition);
- * -Number of remaining Pokémon in opponent team;
- * +15 if we won the battle;
- * -15 if we lost the battle.
+ ** +Our Active Pokémon current Health Points;
+ ** -2 if our Active Pokémon fainted;
+ ** -1 if our Active Pokémon have a [negative status condition](https://bulbapedia.bulbagarden.net/wiki/Status_condition);
+ ** +Number of remaining Pokémon in our team;
+ ** -Opponent Active Pokémon current Health Points;
+ ** +2 if opponent Active Pokémon fainted;
+ ** +1 if opponent Active Pokémon have a [negative status condition](https://bulbapedia.bulbagarden.net/wiki/Status_condition);
+ ** -Number of remaining Pokémon in opponent team;
+ ** +15 if we won the battle;
+ ** -15 if we lost the battle.
 
 
 # Methods implemented
