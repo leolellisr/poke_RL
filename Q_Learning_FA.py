@@ -24,12 +24,14 @@ from src.PlayerQLearning import Player as PlayerQLearning
 debug = True
 save_to_json_file = True
 use_validation = False
-use_neptune = False
+use_neptune = True
 
 np.random.seed(0)
 
 if use_neptune:
-    run = neptune.init(project='project', api_token='token')
+    run = neptune.init(project='leolellisr/rl-pokeenv',
+                       api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI1NjY1YmJkZi1hYmM5LTQ3M2QtOGU1ZC1iZTFlNWY4NjE1NDQifQ==',
+                       tags=["Henrique", "Q-learning FA"])
 
 # our team
 OUR_TEAM = """
@@ -191,12 +193,12 @@ class MaxDamagePlayer(Player):
 # Q-learning FA player
 
 class QLearningFAPlayer(PlayerQLearning):
-    def __init__(self, battle_format, team, n0, alpha, gamma):
+    def __init__(self, battle_format, team, n0, alpha0, gamma):
         super().__init__(battle_format=battle_format, team=team)
-        self.N = defaultdict(lambda: np.zeros(N_OUR_ACTIONS))
+        self.N = defaultdict(lambda: np.repeat(100, N_OUR_ACTIONS))
         self.w = np.random.rand(N_FEATURES)
         self.n0 = n0
-        self.alpha = alpha
+        self.alpha0 = alpha0
         self.gamma = gamma
         self.state = None
         self.action = None
@@ -208,9 +210,10 @@ class QLearningFAPlayer(PlayerQLearning):
             next_state = self.embed_battle(battle)
             # Q-learning
             self.N[str(self.state)][self.action] += 1
+            alpha = self.alpha0 / self.N[str(self.state)][self.action]
             delta = \
                 reward + self.gamma * self.max_q_approx(next_state, self.w) - self.q_approx(self.state, self.action, self.w)
-            self.w += self.alpha * delta * self.x(self.state, self.action)
+            self.w += alpha * delta * self.x(self.state, self.action)
             # S <- S'
             self.state = next_state
         else:
@@ -231,7 +234,8 @@ class QLearningFAPlayer(PlayerQLearning):
             return self.choose_random_move(battle)
 
     def _battle_finished_callback(self, battle):
-        pass
+        if use_neptune:
+            run[f'N0: {self.n0} gamma: {self.gamma} win_acc'].log(self.n_won_battles / len(self._reward_buffer))
 
     ''' Helper functions '''
 
@@ -345,6 +349,8 @@ class QLearningFAPlayer(PlayerQLearning):
         # Value to return
         to_return = current_value - self._reward_buffer[battle]
         self._reward_buffer[battle] = current_value
+        if use_neptune:
+            run[f'N0: {self.n0} gamma: {self.gamma} reward_buffer'].log(current_value)
         return to_return
 
     # Calling reward_computing_helper
@@ -433,11 +439,11 @@ class ValidationPlayer(PlayerQLearning):
 # global parameters
 
 # possible values for num_battles (number of episodes)
-n_battles_array = [100, 1000]
+n_battles_array = [1000, 10000]
 # exploration schedule from MC, i. e., epsilon(t) = N0 / (N0 + N(S(t)))
 n0_array = [0.0001, 0.001, 0.01]
-# possible values for alpha (learning rate)
-alpha_array = [0.01]
+# possible values for alpha0 (initial learning rate)
+alpha0_array = [0.01]
 # possible values for gamma (discount factor)
 gamma_array = [0.75]
 
@@ -445,9 +451,9 @@ list_of_params = [
     {
         'n_battles': n_battles,
         'n0': n0,
-        'alpha': alpha,
+        'alpha0': alpha0,
         'gamma': gamma
-    } for n_battles, n0, alpha, gamma in product(n_battles_array, n0_array, alpha_array, gamma_array)
+    } for n_battles, n0, alpha0, gamma in product(n_battles_array, n0_array, alpha0_array, gamma_array)
 ]
 
 
@@ -509,15 +515,15 @@ def read_dict_from_json(path_dir, filename):
 async def do_battle_training():
     for params in list_of_params:
         start = time.time()
-        params['player'] = QLearningFAPlayer(battle_format="gen8ou", team=OUR_TEAM, n0=params['n0'], alpha=params['alpha'], gamma=params['gamma'])
+        params['player'] = QLearningFAPlayer(battle_format="gen8ou", team=OUR_TEAM, n0=params['n0'], alpha0=params['alpha0'], gamma=params['gamma'])
         params['opponent'] = MaxDamagePlayer(battle_format="gen8ou", team=OP_TEAM)
         await params['player'].battle_against(opponent=params['opponent'], n_battles=params['n_battles'])
         if debug:
-            print("training: num battles (episodes)=%d, N0=%.4f, alpha=%.2f, gamma=%.2f, wins=%d, winning %%=%.2f, total time=%s sec" %
+            print("training: num battles (episodes)=%d, N0=%.4f, alpha0=%.2f, gamma=%.2f, wins=%d, winning %%=%.2f, total time=%s sec" %
                   (
                       params['n_battles'],
                       round(params['n0'], 4),
-                      round(params['alpha'], 4),
+                      round(params['alpha0'], 2),
                       round(params['gamma'], 2),
                       params['player'].n_won_battles,
                       round((params['player'].n_won_battles / params['n_battles']) * 100, 2),
@@ -529,14 +535,14 @@ async def do_battle_training():
             today_s = str(date.today())
             n_battle_s = str(params['n_battles'])
             n0_s = str(round(params['n0'], 4))
-            alpha_s = str(round(params['alpha'], 2))
-            gamma_s = str(round(params['gamma'], 4))
+            alpha0_s = str(round(params['alpha0'], 2))
+            gamma_s = str(round(params['gamma'], 2))
             winning_percentage_s = str(round((params['player'].n_won_battles / params['n_battles']) * 100, 2))
-            filename = "W_" + today_s + "_" + n_battle_s + "_" + n0_s + "_" + alpha_s + "_" + gamma_s + "_" + winning_percentage_s + ".json"
+            filename = "W_" + today_s + "_" + n_battle_s + "_" + n0_s + "_" + alpha0_s + "_" + gamma_s + "_" + winning_percentage_s + ".json"
             save_array_to_json("./Q_Learning_FA_w", filename, params['player'].w)
 
-        # statistics: key: "n_battles, n0, alpha, gamma", values: list of win or lose
-        key = str(params['n_battles']) + "_" + str(round(params['n0'], 4)) + "_" + str(round(params['alpha'], 2)) + "_" + str(round(params['gamma'], 2))
+        # statistics: key: "n_battles, n0, alpha0, gamma", values: list of win or lose
+        key = str(params['n_battles']) + "_" + str(round(params['n0'], 4)) + "_" + str(round(params['alpha0'], 2)) + "_" + str(round(params['gamma'], 2))
         winning_status = list()
         for battle in params['player']._battles.values():
             if battle.won:
@@ -608,11 +614,11 @@ def plot_statistics_json(path_dir, filename="statistics.json"):
         key_elements = key.split("_")
         n_battles = key_elements[0]
         n0 = key_elements[1]
-        alpha = key_elements[2]
+        alpha0 = key_elements[2]
         gamma = key_elements[3]
         value = statistics[key]
         plot_2d(path="./Q_Learning_FA_plot",
-                title="acc_victories_n_battles_" + n_battles + "_N0_" + n0 + "_alpha_" + alpha + "_gamma_" + gamma,
+                title="acc_victories_n_battles_" + n_battles + "_N0_" + n0 + "_alpha0_" + alpha0 + "_gamma_" + gamma,
                 x_label="episodes",
                 x_array=np.array(range(0, len(value))),
                 y_label="acc victory",
@@ -620,7 +626,7 @@ def plot_statistics_json(path_dir, filename="statistics.json"):
 
     # winning % by set of parameters
     n_battles = ""
-    alpha = ""
+    alpha0 = ""
     x_values = []
     y_values = []
     z_values = []
@@ -628,14 +634,14 @@ def plot_statistics_json(path_dir, filename="statistics.json"):
         key_elements = key.split("_")
         n_battles = key_elements[0]
         n0 = key_elements[1]
-        alpha = key_elements[2]
+        alpha0 = key_elements[2]
         gamma = key_elements[3]
         value = statistics[key]
         x_values.append(n0)
         y_values.append(gamma)
         z_values.append(value.count(True) / len(value))
     plot_3d(path="./Q_Learning_FA_plot",
-            title="winning_percentage_n_battles_" + n_battles + "_alpha_" + alpha,
+            title="winning_percentage_n_battles_" + n_battles + "_alpha0_" + alpha0,
             x_label="N0",
             x_array=np.array(x_values).astype(np.float),
             y_label="gamma",
@@ -659,7 +665,7 @@ async def do_battle_validation(path_dir):
         params = filename.split("_")
         n_battles = int(params[2])
         n0 = float(params[3])
-        alpha = float(params[4])
+        alpha0 = float(params[4])
         gamma = float(params[5])
 
         # validation (play 1/3 of the battles using Q-learned table)
@@ -668,11 +674,11 @@ async def do_battle_validation(path_dir):
         opponent = MaxDamagePlayer(battle_format="gen8ou", team=OP_TEAM)
         n_battles_validation = int(n_battles / 3)
         await validation_player.battle_against(opponent=opponent, n_battles=n_battles_validation)
-        print("validation: num battles (episodes)=%d, N0=%.4f, alpha=%.2f, gamma=%.2f, wins=%d, winning %%=%.2f, total time=%s sec" %
+        print("validation: num battles (episodes)=%d, N0=%.4f, alpha0=%.2f, gamma=%.2f, wins=%d, winning %%=%.2f, total time=%s sec" %
               (
                   n_battles_validation,
                   n0,
-                  alpha,
+                  alpha0,
                   gamma,
                   validation_player.n_won_battles,
                   round((validation_player.n_won_battles / n_battles_validation) * 100, 2),
