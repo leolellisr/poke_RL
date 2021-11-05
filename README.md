@@ -132,7 +132,7 @@ Our deterministic team, with each Pokémon, their abilities, natures, items, mov
 
 The environment used is [Pokémon Showdown](https://play.pokemonshowdown.com), a [open-source](https://github.com/smogon/pokemon-showdown.git) Pokémon battle simulator.
 
-![Example](https://prnt.sc/1ydofwv) of one battle in Pokémon Showdown.
+[Example](https://prnt.sc/1ydofwv) of one battle in Pokémon Showdown.
 
 # **Characteristics of  the problem**
 
