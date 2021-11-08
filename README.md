@@ -33,9 +33,9 @@ For training, it is necessary to run Pokémon Showdown <https://play.pokemonshow
 
 * By standard, Pokémon is a stochastic game:
   * One move can have an accuracy value less than 100%, then this move has a probability to be missed;
+  *   * Some moves have [additional effects](https://bulbapedia.bulbagarden.net/wiki/Additional_effect). e.g.: Iron Head have 30% chance of flinching the target (target cannot move in the turn);
   * The damage moves (attacks) have the following [damage calculation](https://bulbapedia.bulbagarden.net/wiki/Damage):
   ![Damage](https://wikimedia.org/api/rest_v1/media/math/render/svg/b8c51fed93bb9a80ae8febc13700a40b8a5da402)
-  * Some moves have [additional effects](https://bulbapedia.bulbagarden.net/wiki/Additional_effect). e.g.: Iron Head have 30% chance of flinching the target (target cannot move in the turn).
 
  where:
   *  **[Level](https://bulbapedia.bulbagarden.net/wiki/Level)** (the level of the attacking Pokémon);
@@ -194,6 +194,19 @@ To adapt our environment to a deterministic setup, we had to establish the follo
   * +15 if we won the battle;
   * -15 if we lost the battle.
 
+# Comparisons
+
+One table with performance comparisons in Validation between our methods and some methods proposed in literature are showed in [this figure](https://prnt.sc/1yrouxy).
+
+The method with the best performance against both Players (MaxDamagePlayer and RandomPlayer) was Q-Learning Function Approximation in the Stochastic environment.
+
+## Limitations
+
+The only limitations of our project are in the use of the **deterministic** environment. Given the need to remove **randomness**, our deterministic solutions require the use of Pokémon on both teams with:
+- Shell Armor or Battle Armor abilities, to prevent critical hits;
+- Moves with 100% accuracy and no side effects likely to occur.
+
+Our **stochastic** solutions can be applied to any case and with any team formation.
 
 # Methods implemented
 * Monte Carlo Control First-Visit;
