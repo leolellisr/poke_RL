@@ -194,20 +194,6 @@ To adapt our environment to a deterministic setup, we had to establish the follo
   * +15 if we won the battle;
   * -15 if we lost the battle.
 
-# Comparisons
-
-One table with performance comparisons in Validation between our methods and some methods proposed in literature are showed in [this figure](https://prnt.sc/1yrouxy).
-
-The method with the best performance against both Players (MaxDamagePlayer and RandomPlayer) was Q-Learning Function Approximation in the Stochastic environment.
-
-## Limitations
-
-The only limitations of our project are in the use of the **deterministic** environment. Given the need to remove **randomness**, our deterministic solutions require the use of Pokémon on both teams with:
-- Shell Armor or Battle Armor abilities, to prevent critical hits;
-- Moves with 100% accuracy and no side effects likely to occur.
-
-Our **stochastic** solutions can be applied to any case and with any team formation.
-
 # Methods implemented
 * Monte Carlo Control First-Visit;
 * Function Approximation with Monte Carlo Control First-Visit;
@@ -215,3 +201,17 @@ Our **stochastic** solutions can be applied to any case and with any team format
 * Function Approximation with Q-Learning;
 * SARSA($\lambda$)
 * Function Approximation with SARSA($\lambda$)
+
+# Comparisons
+
+One table with performance comparisons in Validation between our methods and some methods proposed in literature are showed in [this figure](https://prnt.sc/1yrouxy).
+
+The method with the best performance against both Players (MaxDamagePlayer and RandomPlayer) was Q-Learning Function Approximation in the Stochastic environment.
+
+# Limitations
+
+The only limitations of our project are in the use of the **deterministic** environment. Given the need to remove **randomness**, our deterministic solutions require the use of Pokémon on both teams with:
+- Shell Armor or Battle Armor abilities, to prevent critical hits;
+- Moves with 100% accuracy and no side effects likely to occur.
+
+Our **stochastic** solutions can be applied to any case and with any team formation.
