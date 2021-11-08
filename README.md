@@ -2,9 +2,20 @@ Code repository with classic reinforcement learning methods using poke_env envir
 
 It is necessary to install the requirements available at requirements_poke_env.yml.
 
-For training, it is necessary to run Pokémon Showdown <https://play.pokemonshowdown.com> on localhost. 
+For training, it is necessary to run Pokémon Showdown <https://play.pokemonshowdown.com> on localhost. Showdown is [open-source](https://github.com/smogon/pokemon-showdown.git).
 
-##  *The  problem addressed *
+## Goal and Motivation
+
+* This project aims to employ different reinforcement learning techniques to train agents in a Pokémon battle simulator;
+
+* Our motivation is that the trainer automatically learns, by making decisions through the analysis of states and rewards related to their performance, how to win battles throughout the episodes, noticing:
+  * the different types between Pokémon;
+  * which moves cause more damage to the opponent's Pokémon;
+  * what are the possible strategies using no-damage moves;
+  * and the best times to switch Pokémon. 
+  * Move's effects: Some moves have [additional effects](https://bulbapedia.bulbagarden.net/wiki/Additional_effect). e.g.: Iron Head have 30% chance of flinching the target (target cannot move in the turn).
+
+##  **The  problem addressed**
 * [Pokémon](https://www.pokemon.com) is a popular Japanese RPG (Role Playing Game) which stands a world championship every year; 
 * One single [battle](https://bulbapedia.bulbagarden.net/wiki/Pokémon_battle) of Pokémon has two players. Each player has a 6-Pokémon team; 
 * Each Pokémon has:
@@ -24,30 +35,31 @@ For training, it is necessary to run Pokémon Showdown <https://play.pokemonshow
   * One move can have an accuracy value less than 100%, then this move has a probability to be missed;
   * The damage moves (attacks) have the following [damage calculation](https://bulbapedia.bulbagarden.net/wiki/Damage):
   ![Damage](https://wikimedia.org/api/rest_v1/media/math/render/svg/b8c51fed93bb9a80ae8febc13700a40b8a5da402)
-  
+  * Some moves have [additional effects](https://bulbapedia.bulbagarden.net/wiki/Additional_effect). e.g.: Iron Head have 30% chance of flinching the target (target cannot move in the turn).
+
  where:
-  *  *[Level](https://bulbapedia.bulbagarden.net/wiki/Level) * (the level of the attacking Pokémon);
-  *  *A * is the effective Attack stat of the attacking Pokémon if the used move is a physical move, or the effective Special Attack stat of the attacking Pokémon if the used move is a special move;
-  *  *D * is the effective Defense stat of the target if the used move is a physical move or a special move that uses the target's Defense stat, or the effective Special Defense of the target if the used move is an other special move;
-  *  *[Power](https://bulbapedia.bulbagarden.net/wiki/Power) * is the effective power of the used move;
-  *  *Weather * is 1.5 if a Water-type move is being used during rain or a Fire-type move during harsh sunlight, and 0.5 if a Water-type move is used during harsh sunlight or a Fire-type move during rain, and 1 otherwise.
-  *  *[Critical](https://bulbapedia.bulbagarden.net/wiki/Critical_hit) * has 6.25% chance of occurs and multiplies the damage by 1.5;
-  *  *random * is a random factor between 0.85 and 1.00 (inclusive):
-  *  *[STAB](https://bulbapedia.bulbagarden.net/wiki/Same-type_attack_bonus) * is the same-type attack bonus. This is equal to 1.5 if the move's type matches any of the user's types, 2 if the user of the move additionally has the ability Adaptability, and 1 if otherwise;
-  *  *[Type](https://bulbapedia.bulbagarden.net/wiki/Type) * is the type effectiveness. This can be 0 (ineffective); 0.25, 0.5 (not very effective); 1 (normally effective); 2, or 4 (super effective), depending on both the move's and target's types;
-  *  *[Burn](https://bulbapedia.bulbagarden.net/wiki/Burn_(status_condition)) * is 0.5 (from Generation III onward) if the attacker is burned, its Ability is not Guts, and the used move is a physical move (other than Facade from Generation VI onward), and 1 otherwise.
-  *  *other * is 1 in most cases, and a different multiplier when specific interactions of moves, Abilities, or items take effect. In this work, this is applied just to Pokémon that has the item  *Life Orb *, which multiplies the damage by 1.3.
+  *  **[Level](https://bulbapedia.bulbagarden.net/wiki/Level)** (the level of the attacking Pokémon);
+  *  **A** is the effective Attack stat of the attacking Pokémon if the used move is a physical move, or the effective Special Attack stat of the attacking Pokémon if the used move is a special move;
+  *  **D** is the effective Defense stat of the target if the used move is a physical move or a special move that uses the target's Defense stat, or the effective Special Defense of the target if the used move is an other special move;
+  *  **[Power](https://bulbapedia.bulbagarden.net/wiki/Power)** is the effective power of the used move;
+  *  **Weather** is 1.5 if a Water-type move is being used during rain or a Fire-type move during harsh sunlight, and 0.5 if a Water-type move is used during harsh sunlight or a Fire-type move during rain, and 1 otherwise.
+  *  **[Critical](https://bulbapedia.bulbagarden.net/wiki/Critical_hit)** has 6.25% chance of occurs and multiplies the damage by 1.5;
+  *  **random** is a random factor between 0.85 and 1.00 (inclusive):
+  *  **[STAB](https://bulbapedia.bulbagarden.net/wiki/Same-type_attack_bonus)** is the same-type attack bonus. This is equal to 1.5 if the move's type matches any of the user's types, 2 if the user of the move additionally has the ability Adaptability, and 1 if otherwise;
+  *  **[Type](https://bulbapedia.bulbagarden.net/wiki/Type)** is the type effectiveness. This can be 0 (ineffective); 0.25, 0.5 (not very effective); 1 (normally effective); 2, or 4 (super effective), depending on both the move's and target's types;
+  *  **[Burn](https://bulbapedia.bulbagarden.net/wiki/Burn_(status_condition))** is 0.5 (from Generation III onward) if the attacker is burned, its Ability is not Guts, and the used move is a physical move (other than Facade from Generation VI onward), and 1 otherwise.
+  *  **other** is 1 in most cases, and a different multiplier when specific interactions of moves, Abilities, or items take effect. In this work, this is applied just to Pokémon that has the item  **Life Orb**, which multiplies the damage by 1.3.
   
-  * *Not* used in this work (equals 1):
+  * **Not** used in this work (equals 1):
     * Targets (for Battles with more than two active Pokémon in the field);
     * Badge ( just applied in Generation II);
    
-   #  *MDP formulation and discretization model * 
+   #  **MDP formulation and discretization model** 
 
 ## Original (stochastic)
 
-We considered our original (stochastic) MDP as a tuple M = (S, A, \phi, R), where:
-* *S* is the whole set of possible states. One state  *s in *  is defined at each turn with 12 battle elements concatenated, that correspond to:
+We considered our original (stochastic) MDP as a tuple M = (S, A, phi, R), where:
+* **S** is the whole set of possible states. One state  **s in S**  is defined at each turn with 12 battle elements concatenated, that correspond to:
   * [0] Our Active Pokémon index (0: Venusaur,  1: Pikachu, 2: Tauros, 3: Sirfetch'd, 4: Blastoise, 5: Charizard);
   * [1] Opponent Active Pokémon index (0: Eevee,  1: Vaporeon, 2: Leafeon, 3: Sylveon, 4: Jolteon, 5: Umbreon);
   * [2-5] Active Pokémon moves base power (if a move doesn't have base power, default to -1);
@@ -55,7 +67,7 @@ We considered our original (stochastic) MDP as a tuple M = (S, A, \phi, R), wher
   * [10] Our remaining Pokémon;
   * [11] Opponent remaining Pokémon.
  
-* *A* is the whole set of possible actions. Our action space is a range [0, 8]. One action  *a \in A * is one of the possible choices:
+* **A** is the whole set of possible actions. Our action space is a range [0, 8]. One action  **a in A** is one of the possible choices:
   * [0] 1st Active Pokémon move;
   * [1] 2nd Active Pokémon move;
   * [2] 3rd Active Pokémon move;
@@ -68,11 +80,12 @@ We considered our original (stochastic) MDP as a tuple M = (S, A, \phi, R), wher
 
 When a selected action cannot be executed, we random select another possible action.
 
-* *\phi* is a stochastic transition function that occurs from state  *s * to state  *s' *, by taking an action  *a *. The following parameters are part of our  stochastic transition function:
+* **phi** is a stochastic transition function that occurs from state  **s** to state  **s'**, by taking an action  **a**. The following parameters are part of our  stochastic transition function:
   * Move's accuracy (chance of the move successfully occurs or to fail);
   * Damage calculation: The  *[Critical](https://bulbapedia.bulbagarden.net/wiki/Critical_hit) * parameter (6.25% chance of occurs) and the  *random * parameter, ranging from 0.85 and 1.00 (inclusive).
+ * Move's effects: Some moves have [additional effects](https://bulbapedia.bulbagarden.net/wiki/Additional_effect). e.g.: Iron Head have 30% chance of flinching the target (target cannot move in the turn).
 
-* *R* is a set of rewards. A reward  *r \in R * is acquired in state  *s * by taking the action  *a *. The rewards are calculated at the end of the turn. The value of reward  *r * is defined by:
+* **R** is a set of rewards. A reward  **r in R** is acquired in state  **s** by taking the action  **a**. The rewards are calculated at the end of the turn. The value of reward  **r** is defined by:
   * +Our Active Pokémon current Health Points;
   * -2 if our Active Pokémon fainted;
   * -1 if our Active Pokémon have a [negative status condition](https://bulbapedia.bulbagarden.net/wiki/Status_condition);
@@ -91,7 +104,7 @@ Our stochastic team, with each Pokémon, their abilities, natures, items, moves 
 ## Deterministic
 
 To adapt Pokémon to a deterministic environment, we use Pokémon that cannot receive a critical hit, moves with only 100% accuracy and edit the server code to ignore the random parameter in damage calculation, removing the stochastic transition function \phi from our MDP. Therefore, now our MDP is a tuple M = (S, A, R), where:
-* *S* is the whole set of possible states. One state  *s in *  is defined at each turn with 12 battle elements concatenated, that correspond to:
+* **S** is the whole set of possible states. One state  **s in S**  is defined at each turn with 12 battle elements concatenated, that correspond to:
   * [0] Our Active Pokémon index ;
   * [1] Opponent Active Pokémon index ;
   * [2-5] Active Pokémon moves base power (if a move doesn't have base power, default to -1);
@@ -99,7 +112,7 @@ To adapt Pokémon to a deterministic environment, we use Pokémon that cannot re
   * [10] Our remaining Pokémon;
   * [11] Opponent remaining Pokémon.
  
-* *A* is the whole set of possible actions. Our action space is a range [0, 8] (len: 9). One action  *a \in A * is one of the possible choices:
+* **A** is the whole set of possible actions. Our action space is a range [0, 8] (len: 9). One action  **a in A** is one of the possible choices:
   * [0] 1st Active Pokémon move;
   * [1] 2nd Active Pokémon move;
   * [2] 3rd Active Pokémon move;
@@ -112,7 +125,7 @@ To adapt Pokémon to a deterministic environment, we use Pokémon that cannot re
 
 When a selected action cannot be executed, we random select another possible action.
 
-* *R* is a set of rewards. A reward  *r \in R * is acquired in state  *s * by taking the action  *a *. The rewards are calculated at the end of each turn. The value of reward  *r * is defined by:
+* **R*** is a set of rewards. A reward  **r in R** is acquired in state  **s** by taking the action  **a**. The rewards are calculated at the end of each turn. The value of reward  **r** is defined by:
   * +Our Active Pokémon current Health Points;
   * -2 if our Active Pokémon fainted;
   * -1 if our Active Pokémon have a [negative status condition](https://bulbapedia.bulbagarden.net/wiki/Status_condition);
@@ -128,13 +141,40 @@ When a selected action cannot be executed, we random select another possible act
 
 Our deterministic team, with each Pokémon, their abilities, natures, items, moves (with base power and accuracy) and possible switches are shown in [Team](https://prnt.sc/1ydn52l).
 
-#  *The environments built *
+We use on both teams only Pokémon with Battle Armor or Shell Armor abilities, which prevent critical hits from being performed. Also, we use in both teams only moves with 100% accuracy, with no chance of error, and the move haven't additional effects.
+
+## Search space
+
+The features that integrate our states are shown in [this figure](https://prnt.sc/1yfksfe). For a single battle between two players with 6 Pokémon each, we have $1.016.064$ possible states.
+
+Since we have 9 possible actions for each Pokémon, we total $9.144.576$ possibilities for each battle.
+
+#  **The environments built**
 
 The environment used is [Pokémon Showdown](https://play.pokemonshowdown.com), a [open-source](https://github.com/smogon/pokemon-showdown.git) Pokémon battle simulator.
 
 [Example](https://prnt.sc/1ydofwv) of one battle in Pokémon Showdown.
 
-#  *Characteristics of  the problem *
+To communicate our agents with Pokémon Showdown we used [poke-env](https://poke-env.readthedocs.io/en/latest/) a Python environment for interacting in pokemon showdown battles.
+
+We used separated Python classes for define the Players that are trained with each method. These classes communicates with Pokémon Showdown and implements the poke-env methods to:
+* Create battles;
+* Accept battles;
+* Send orders (actions) to Pokémon Showdown.
+
+## Original (stochastic)
+
+To speed up the battles, we hosted our own server of Pokemon Showdown in localhost. It requires Node.js v10+.
+
+## Deterministic environment
+
+To adapt our environment to a deterministic setup, we had to establish the following parameters:
+* We removed the random component of sim/battle.ts from the Pokémon Showdown simulator;
+* We use on both teams only Pokémon with Battle Armor or Shell Armor abilities, which prevent critical hits from being performed;
+* We used in both teams only moves with 100% accuracy, with no chance of error;
+* We didn't use any move with additional effect. 
+
+#  **Characteristics of  the problem**
 
 * Both of our environments (stochastic and deterministic) are episodic. One state occurs after another;
 
@@ -142,7 +182,7 @@ The environment used is [Pokémon Showdown](https://play.pokemonshowdown.com), a
   * When all our Pokémon are fainted (we lose);
   * When all opponent Pokémon are fainted (we won).
 
-* As specified before, a reward  *r * is calculated at the end of a turn. The value of reward  *r * is defined by:
+* As specified before, a reward  **r** is calculated at the end of a turn. The value of reward  **r** is defined by:
   * +Our Active Pokémon current Health Points;
   * -2 if our Active Pokémon fainted;
   * -1 if our Active Pokémon have a [negative status condition](https://bulbapedia.bulbagarden.net/wiki/Status_condition);
@@ -160,5 +200,5 @@ The environment used is [Pokémon Showdown](https://play.pokemonshowdown.com), a
 * Function Approximation with Monte Carlo Control First-Visit;
 * Q-Learning;
 * Function Approximation with Q-Learning;
-* SARSA(\lambda)
-* Function Approximation with SARSA(\lambda)
+* SARSA($\lambda$)
+* Function Approximation with SARSA($\lambda$)
