@@ -7,8 +7,8 @@ For training, it is necessary to run Pokémon Showdown <https://play.pokemonshow
 [Presentation video](https://youtu.be/uSZE9gnheSI)
 
 Graphics available at:
-[Graphs MC Control, MC Control FA, Q-Learning, Q-Learning FA, SARSA($\lambda$) Deterministic and SARSA($\lambda$) FA](https://app.neptune.ai/leolellisr/rl-pokeenv)
-[Graphs SARSA($\lambda$) Stochastic](https://app.neptune.ai/mauricioplopes/poke-env)
+* [Graphs MC Control, MC Control FA, Q-Learning, Q-Learning FA, SARSA($\lambda$) Deterministic and SARSA($\lambda$) FA](https://app.neptune.ai/leolellisr/rl-pokeenv)
+* [Graphs SARSA($\lambda$) Stochastic](https://app.neptune.ai/mauricioplopes/poke-env)
 
 ## Goal and Motivation
 
