@@ -105,7 +105,7 @@ When a selected action cannot be executed, we random select another possible act
  
 ### Stochastic Team
 
-Our stochastic team, with each Pokémon, their abilities, natures, items, moves (with base power and accuracy) and possible switches are shown in [Team](https://prnt.sc/1y73c3t).
+Our stochastic team, with each Pokémon, their abilities, natures, items, moves (base power and accuracy) and possible switches are shown in [Team](https://prnt.sc/1y73c3t).
 
 ## Deterministic
 
@@ -145,9 +145,9 @@ When a selected action cannot be executed, we random select another possible act
  
 ### Deterministic Team
 
-Our deterministic team, with each Pokémon, their abilities, natures, items, moves (with base power and accuracy) and possible switches are shown in [Team](https://prnt.sc/1ydn52l).
+Our deterministic team, with each Pokémon, their abilities, natures, items, moves (base power and accuracy) and possible switches are shown in [Team](https://prnt.sc/1ydn52l).
 
-We use on both teams only Pokémon with Battle Armor or Shell Armor abilities, which prevent critical hits from being performed. Also, we use in both teams only moves with 100% accuracy, with no chance of error, and the move haven't additional effects.
+We use on both teams only Pokémon with Battle Armor or Shell Armor abilities, which prevent critical hits from being performed. Also, we use in both teams only moves with 100% accuracy, with no chance of getting it missed, and the move haven't additional effects.
 
 ## Search space
 
@@ -177,7 +177,7 @@ To speed up the battles, we hosted our own server of Pokemon Showdown in localho
 To adapt our environment to a deterministic setup, we had to establish the following parameters:
 * We removed the random component of sim/battle.ts from the Pokémon Showdown simulator;
 * We use on both teams only Pokémon with Battle Armor or Shell Armor abilities, which prevent critical hits from being performed;
-* We used in both teams only moves with 100% accuracy, with no chance of error;
+* We used in both teams only moves with 100% accuracy, with no chance of getting it missed;
 * We didn't use any move with additional effect. 
 
 #  **Characteristics of  the problem**
@@ -216,7 +216,7 @@ The method with the best performance against both Players (MaxDamagePlayer and R
 
 # Limitations
 
-The only limitations of our project are in the use of the **deterministic** environment. Given the need to remove **randomness**, our deterministic solutions require the use of Pokémon on both teams with:
+The only limitations of our project are in the use of the **deterministic** environment. Given the need to remove **randomness**, our deterministic solutions require the use of modified Pokémon Showdown, without the random parameter in damage calculation, and the Pokémon on both teams with:
 - Shell Armor or Battle Armor abilities, to prevent critical hits;
 - Moves with 100% accuracy and no side effects likely to occur.
 
