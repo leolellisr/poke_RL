@@ -4,6 +4,12 @@ It is necessary to install the requirements available at requirements_poke_env.y
 
 For training, it is necessary to run Pokémon Showdown <https://play.pokemonshowdown.com> on localhost. Showdown is [open-source](https://github.com/smogon/pokemon-showdown.git).
 
+Presentation video: https://youtu.be/_XtuvAax4fs
+
+Graphics available at:
+https://app.neptune.ai/leolellisr/rl-pokeenv
+https://app.neptune.ai/mauricioplopes/poke-env
+
 ## Goal and Motivation
 
 * This project aims to employ different reinforcement learning techniques to train agents in a Pokémon battle simulator;
@@ -204,7 +210,7 @@ To adapt our environment to a deterministic setup, we had to establish the follo
 
 # Comparisons
 
-One table with performance comparisons in Validation between our methods and some methods proposed in literature are showed in [this figure](https://prnt.sc/1yrouxy).
+One table with performance comparisons in Validation between our methods and some methods proposed in literature are showed in [this figure](https://prnt.sc/1ytqrzm).
 
 The method with the best performance against both Players (MaxDamagePlayer and RandomPlayer) was Q-Learning Function Approximation in the Stochastic environment.
 
