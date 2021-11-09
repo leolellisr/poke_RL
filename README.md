@@ -4,7 +4,7 @@ It is necessary to install the requirements available at requirements_poke_env.y
 
 For training, it is necessary to run Pokémon Showdown <https://play.pokemonshowdown.com> on localhost. Showdown is [open-source](https://github.com/smogon/pokemon-showdown.git).
 
-Presentation video: https://youtu.be/_XtuvAax4fs
+Presentation video: https://youtu.be/uSZE9gnheSI
 
 Graphics available at:
 https://app.neptune.ai/leolellisr/rl-pokeenv
@@ -107,6 +107,8 @@ When a selected action cannot be executed, we random select another possible act
 
 Our stochastic team, with each Pokémon, their abilities, natures, items, moves (base power and accuracy) and possible switches are shown in [Team](https://prnt.sc/1y73c3t).
 
+The stochastic opponent team, with each Pokémon, their abilities, natures, items, moves (base power and accuracy) and possible switches are shown in [Opponent Team](https://prnt.sc/1ywz4eh).
+
 ## Deterministic
 
 To adapt Pokémon to a deterministic environment, we use Pokémon that cannot receive a critical hit, moves with only 100% accuracy and edit the server code to ignore the random parameter in damage calculation, removing the stochastic transition function \phi from our MDP. Therefore, now our MDP is a tuple M = (S, A, R), where:
@@ -146,6 +148,8 @@ When a selected action cannot be executed, we random select another possible act
 ### Deterministic Team
 
 Our deterministic team, with each Pokémon, their abilities, natures, items, moves (base power and accuracy) and possible switches are shown in [Team](https://prnt.sc/1ydn52l).
+
+The deterministic opponent team, with each Pokémon, their abilities, natures, items, moves (base power and accuracy) and possible switches are shown in [Opponent Team](https://prnt.sc/1ywzfhx).
 
 We use on both teams only Pokémon with Battle Armor or Shell Armor abilities, which prevent critical hits from being performed. Also, we use in both teams only moves with 100% accuracy, with no chance of getting it missed, and the move haven't additional effects.
 
