@@ -4,11 +4,11 @@ It is necessary to install the requirements available at requirements_poke_env.y
 
 For training, it is necessary to run Pokémon Showdown <https://play.pokemonshowdown.com> on localhost. Showdown is [open-source](https://github.com/smogon/pokemon-showdown.git).
 
-Presentation video: https://youtu.be/uSZE9gnheSI
+[Presentation video](https://youtu.be/uSZE9gnheSI)
 
 Graphics available at:
-https://app.neptune.ai/leolellisr/rl-pokeenv
-https://app.neptune.ai/mauricioplopes/poke-env
+[Graphs MC Control, MC Control FA, Q-Learning, Q-Learning FA, SARSA($\lambda$) Deterministic and SARSA($\lambda$) FA](https://app.neptune.ai/leolellisr/rl-pokeenv)
+[Graphs SARSA($\lambda$) Stochastic](https://app.neptune.ai/mauricioplopes/poke-env)
 
 ## Goal and Motivation
 
