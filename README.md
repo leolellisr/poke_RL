@@ -1,8 +1,8 @@
-Code repository with classic reinforcement learning methods using poke_env environment <poke-env.readthedocs.io/en/latest/>.
+Code repository with classic reinforcement learning methods using [poke_env environment](poke-env.readthedocs.io/en/latest/).
 
-It is necessary to install the requirements available at requirements_poke_env.yml.
+It is necessary to install the requirements available at [requirements_poke_env.yml](https://github.com/leolellisr/poke_RL/blob/master/requirements_poke_env.yml).
 
-For training, it is necessary to run Pokémon Showdown <https://play.pokemonshowdown.com> on localhost. Showdown is [open-source](https://github.com/smogon/pokemon-showdown.git).
+For training, it is necessary to run [Pokémon Showdown](https://play.pokemonshowdown.com) on localhost. Showdown is [open-source](https://github.com/smogon/pokemon-showdown.git).
 
 [Presentation video](https://youtu.be/uSZE9gnheSI)
 
