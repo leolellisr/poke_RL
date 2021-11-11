@@ -10,6 +10,12 @@ Graphics available at:
 * [Graphs MC Control, MC Control FA, Q-Learning, Q-Learning FA, SARSA($\lambda$) Deterministic and SARSA($\lambda$) FA](https://app.neptune.ai/leolellisr/rl-pokeenv)
 * [Graphs SARSA($\lambda$) Stochastic](https://app.neptune.ai/mauricioplopes/poke-env)
 
+Notebooks of available methods available [here](https://github.com/leolellisr/poke_RL/tree/master/notebooks)
+
+Equivalent python files of available methods available [here](https://github.com/leolellisr/poke_RL/tree/master/py)
+
+json files of trained tabular methods available [here](https://drive.google.com/drive/folders/1GwNQSsOR0PPtPKlbIy9NzWvTnTtMOD8_?usp=sharing)
+
 ## Goal and Motivation
 
 * This project aims to employ different reinforcement learning techniques to train agents in a Pokémon battle simulator;
