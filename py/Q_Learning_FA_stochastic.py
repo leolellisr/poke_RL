@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[ ]:
+
+
 # imports
 
 import asyncio
@@ -5,6 +11,7 @@ import json
 import os
 import matplotlib
 import neptune.new as neptune
+import nest_asyncio
 import numpy as np
 import pandas as pd
 import time
@@ -20,12 +27,18 @@ from poke_env.player.player import Player
 from scipy.interpolate import griddata
 from src.PlayerQLearning import Player as PlayerQLearning
 
+
+# In[ ]:
+
+
 # global configs
+
 debug = True
 save_to_json_file = True
 use_validation = False
-use_neptune = True
+use_neptune = False
 
+nest_asyncio.apply()
 np.random.seed(0)
 
 if use_neptune:
@@ -33,7 +46,12 @@ if use_neptune:
                        api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI1NjY1YmJkZi1hYmM5LTQ3M2QtOGU1ZC1iZTFlNWY4NjE1NDQifQ==',
                        tags=["Henrique", "Q-learning FA"])
 
+
+# In[ ]:
+
+
 # our team
+
 OUR_TEAM = """
 Pikachu-Original (M) @ Light Ball  
 Ability: Static  
@@ -91,6 +109,10 @@ Jolly Nature
 - Megahorn  
 - Iron Head  
 """
+
+
+# In[ ]:
+
 
 # opponent's team
 
@@ -153,6 +175,10 @@ Careful Nature
 - Wish  
 """
 
+
+# In[ ]:
+
+
 N_STATE_COMPONENTS = 12
 # num of features = num of state components + action
 N_FEATURES = N_STATE_COMPONENTS + 1
@@ -179,6 +205,9 @@ NAME_TO_ID_DICT = {
 }
 
 
+# In[ ]:
+
+
 # Max-damage player
 
 class MaxDamagePlayer(Player):
@@ -190,12 +219,15 @@ class MaxDamagePlayer(Player):
             return self.choose_random_move(battle)
 
 
+# In[ ]:
+
+
 # Q-learning FA player
 
 class QLearningFAPlayer(PlayerQLearning):
     def __init__(self, battle_format, team, n0, alpha0, gamma):
         super().__init__(battle_format=battle_format, team=team)
-        self.N = defaultdict(lambda: np.repeat(100, N_OUR_ACTIONS))
+        self.N = defaultdict(lambda: np.zeros(N_OUR_ACTIONS))
         self.w = np.random.rand(N_FEATURES)
         self.n0 = n0
         self.alpha0 = alpha0
@@ -211,8 +243,7 @@ class QLearningFAPlayer(PlayerQLearning):
             # Q-learning
             self.N[str(self.state)][self.action] += 1
             alpha = self.alpha0 / self.N[str(self.state)][self.action]
-            delta = \
-                reward + self.gamma * self.max_q_approx(next_state, self.w) - self.q_approx(self.state, self.action, self.w)
+            delta =                 reward + self.gamma * self.max_q_approx(next_state, self.w) - self.q_approx(self.state, self.action, self.w)
             self.w += alpha * delta * self.x(self.state, self.action)
             # S <- S'
             self.state = next_state
@@ -358,6 +389,9 @@ class QLearningFAPlayer(PlayerQLearning):
         return self.reward_computing_helper(battle, fainted_value=2, hp_value=1, victory_value=15)
 
 
+# In[ ]:
+
+
 # validation player
 
 class ValidationPlayer(PlayerQLearning):
@@ -436,16 +470,20 @@ class ValidationPlayer(PlayerQLearning):
         return state
 
 
+# In[ ]:
+
+
 # global parameters
 
 # possible values for num_battles (number of episodes)
-n_battles_array = [1000, 10000]
+n_battles_array = [10000]
 # exploration schedule from MC, i. e., epsilon(t) = N0 / (N0 + N(S(t)))
 n0_array = [0.0001, 0.001, 0.01]
 # possible values for alpha0 (initial learning rate)
 alpha0_array = [0.01]
 # possible values for gamma (discount factor)
 gamma_array = [0.75]
+
 
 list_of_params = [
     {
@@ -455,6 +493,9 @@ list_of_params = [
         'gamma': gamma
     } for n_battles, n0, alpha0, gamma in product(n_battles_array, n0_array, alpha0_array, gamma_array)
 ]
+
+
+# In[ ]:
 
 
 # json helper functions
@@ -509,6 +550,9 @@ def read_dict_from_json(path_dir, filename):
     return data
 
 
+# In[ ]:
+
+
 # main (let's battle!)
 
 # training
@@ -559,102 +603,10 @@ loop = asyncio.get_event_loop()
 loop.run_until_complete(loop.create_task(do_battle_training()))
 
 
-# plotting helper functions
-
-def plot_2d(path, title, x_label, x_array, y_label, y_array):
-    # print("plotting %s" % title)
-    # set labels and plot surface
-    figure = matplotlib.pyplot.figure(figsize=(20, 10))
-    ax = figure.gca()
-    ax.set_title(title)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
-    ax.plot(x_array, y_array)
-    # pyplot.show()
-    if not os.path.exists(path):
-        os.makedirs(path)
-    filename = path + "/" + title + "_" + x_label + "_" + y_label + "_" + ".pdf"
-    figure.savefig(filename, dpi=figure.dpi)
-    pyplot.close(figure)
-    # print("done!")
+# In[ ]:
 
 
-def plot_3d(path, title, x_label, x_array, y_label, y_array, z_label, z_array):
-    # print("plotting %s" % title)
-    xyz = {'x': x_array, 'y': y_array, 'z': z_array}
-    df = pd.DataFrame(xyz, index=range(len(xyz['x'])))
-    xv, yv = np.meshgrid(x_array, y_array)
-    zv = griddata((df['x'], df['y']), df['z'], (xv, yv), method='nearest')
-    # set labels and plot surface
-    figure = matplotlib.pyplot.figure(figsize=(20, 10))
-    ax = figure.gca(projection='3d')
-    ax.set_title(title)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
-    ax.set_zlabel(z_label)
-    surface = ax.plot_surface(xv, yv, zv, rstride=1, cstride=1, cmap=matplotlib.cm.coolwarm, linewidth=0,
-                              antialiased=False)
-    figure.colorbar(surface)
-    # pyplot.show()
-    if not os.path.exists(path):
-        os.makedirs(path)
-    filename = path + "/" + title + ".pdf"
-    figure.savefig(filename, dpi=figure.dpi)
-    pyplot.close(figure)
-    # print("done!")
-
-
-# plot additional statistics
-
-def plot_statistics_json(path_dir, filename="statistics.json"):
-    # plots from statistics.json
-    statistics = read_dict_from_json(path_dir, filename)
-    # win/lost vs. episode number
-    for key in statistics.keys():
-        key_elements = key.split("_")
-        n_battles = key_elements[0]
-        n0 = key_elements[1]
-        alpha0 = key_elements[2]
-        gamma = key_elements[3]
-        value = statistics[key]
-        plot_2d(path="./Q_Learning_FA_plot",
-                title="acc_victories_n_battles_" + n_battles + "_N0_" + n0 + "_alpha0_" + alpha0 + "_gamma_" + gamma,
-                x_label="episodes",
-                x_array=np.array(range(0, len(value))),
-                y_label="acc victory",
-                y_array=np.cumsum(value).astype(np.int))
-
-    # winning % by set of parameters
-    n_battles = ""
-    alpha0 = ""
-    x_values = []
-    y_values = []
-    z_values = []
-    for key in statistics.keys():
-        key_elements = key.split("_")
-        n_battles = key_elements[0]
-        n0 = key_elements[1]
-        alpha0 = key_elements[2]
-        gamma = key_elements[3]
-        value = statistics[key]
-        x_values.append(n0)
-        y_values.append(gamma)
-        z_values.append(value.count(True) / len(value))
-    plot_3d(path="./Q_Learning_FA_plot",
-            title="winning_percentage_n_battles_" + n_battles + "_alpha0_" + alpha0,
-            x_label="N0",
-            x_array=np.array(x_values).astype(np.float),
-            y_label="gamma",
-            y_array=np.array(y_values).astype(np.float),
-            z_label="winning %",
-            z_array=np.array(z_values))
-
-
-# plots from statistics
-plot_statistics_json("./Q_Learning_FA_statistics")
-
-
-# validation
+# validation - vs maxPlayer
 
 async def do_battle_validation(path_dir):
     # read from json
@@ -689,3 +641,44 @@ async def do_battle_validation(path_dir):
 if use_validation:
     loop = asyncio.get_event_loop()
     loop.run_until_complete(loop.create_task(do_battle_validation("./Q_Learning_FA_w")))
+
+
+# In[ ]:
+
+
+# validation - vs randomPlayer
+
+async def do_battle_validation(path_dir):
+    # read from json
+    for filename in os.listdir(path_dir):
+        # learned feature vector
+        w = np.array(read_array_from_json(path_dir, filename))
+        # params: n_battles, n0, gamma
+        params = filename.split("_")
+        n_battles = int(params[2])
+        n0 = float(params[3])
+        alpha0 = float(params[4])
+        gamma = float(params[5])
+
+        # validation (play 1/3 of the battles using Q-learned table)
+        start = time.time()
+        validation_player = ValidationPlayer(battle_format="gen8ou", team=OUR_TEAM, w=w)
+        opponent = MaxDamagePlayer(battle_format="gen8ou", team=OP_TEAM)
+        n_battles_validation = int(n_battles / 3)
+        await validation_player.battle_against(opponent=opponent, n_battles=n_battles_validation)
+        print("validation: num battles (episodes)=%d, N0=%.4f, alpha0=%.2f, gamma=%.2f, wins=%d, winning %%=%.2f, total time=%s sec" %
+              (
+                  n_battles_validation,
+                  n0,
+                  alpha0,
+                  gamma,
+                  validation_player.n_won_battles,
+                  round((validation_player.n_won_battles / n_battles_validation) * 100, 2),
+                  round(time.time() - start, 2)
+              ))
+
+
+if use_validation:
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(loop.create_task(do_battle_validation("./Q_Learning_FA_w")))
+

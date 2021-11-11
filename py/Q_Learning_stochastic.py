@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[4]:
+
+
 # imports
 
 import asyncio
@@ -5,6 +11,7 @@ import json
 import os
 import matplotlib
 import neptune.new as neptune
+import nest_asyncio
 import numpy as np
 import pandas as pd
 import re
@@ -21,19 +28,28 @@ from poke_env.player.player import Player
 from scipy.interpolate import griddata
 from src.PlayerQLearning import Player as PlayerQLearning
 
+
+# In[ ]:
+
+
 # global configs
 
 debug = True
 save_to_json_file = True
-use_validation = True
-use_neptune = True
+use_validation = False
+use_neptune = False
 
+nest_asyncio.apply()
 np.random.seed(0)
 
 if use_neptune:
     run = neptune.init(project='leolellisr/rl-pokeenv',
                        api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI1NjY1YmJkZi1hYmM5LTQ3M2QtOGU1ZC1iZTFlNWY4NjE1NDQifQ==',
                        tags=["Henrique", "Q-learning"])
+
+
+# In[ ]:
+
 
 # our team
 
@@ -94,6 +110,10 @@ Jolly Nature
 - Megahorn  
 - Iron Head  
 """
+
+
+# In[ ]:
+
 
 # opponent's team
 
@@ -156,6 +176,10 @@ Careful Nature
 - Wish  
 """
 
+
+# In[ ]:
+
+
 N_OUR_MOVE_ACTIONS = 4
 N_OUR_SWITCH_ACTIONS = 5
 N_OUR_ACTIONS = N_OUR_MOVE_ACTIONS + N_OUR_SWITCH_ACTIONS
@@ -178,6 +202,9 @@ NAME_TO_ID_DICT = {
 }
 
 
+# In[ ]:
+
+
 # Max-damage player
 
 class MaxDamagePlayer(Player):
@@ -187,6 +214,9 @@ class MaxDamagePlayer(Player):
             return self.create_order(best_move)
         else:
             return self.choose_random_move(battle)
+
+
+# In[ ]:
 
 
 # Q-learning player
@@ -209,14 +239,13 @@ class QLearningPlayer(PlayerQLearning):
             # Q-learning
             self.N[self.state][self.action] += 1
             alpha = 1.0 / self.N[self.state][self.action]
-            self.Q[self.state][self.action] += \
-                alpha * (reward + self.gamma * np.max(self.Q[next_state]) - self.Q[self.state][self.action])
+            self.Q[self.state][self.action] +=                 alpha * (reward + self.gamma * np.max(self.Q[next_state]) - self.Q[self.state][self.action])
             # S <- S'
             self.state = next_state
         else:
             # S first initialization
             self.state = self.embed_battle(battle)
-
+            
         # Choose A from S using epsilon-greedy policy
         self.action = self.pi(self.state)
 
@@ -246,7 +275,7 @@ class QLearningPlayer(PlayerQLearning):
         return np.random.choice(ALL_OUR_ACTIONS, p=action_pick_probability)
 
     # the embed battle is our state
-    # 12 factors: our active mon, opponent's active mon, 4 moves base power, 4 moves multipliers, remaining mons
+    # 12 factors: our active mon, opponent's active mon, 4 moves base power, 4 moves multipliers, num fainted mons
     @staticmethod
     def embed_battle(battle):
         # -1 indicates that the move does not have a base power
@@ -338,6 +367,9 @@ class QLearningPlayer(PlayerQLearning):
         return self.reward_computing_helper(battle, fainted_value=2, hp_value=1, victory_value=15)
 
 
+# In[ ]:
+
+
 # validation player
 
 class ValidationPlayer(PlayerQLearning):
@@ -384,11 +416,11 @@ class ValidationPlayer(PlayerQLearning):
                     battle.opponent_active_pokemon.type_2,
                 )
 
-        # We count how many pokemons have not fainted in each team
-        fainted_mon_team = (
+        # We count how many pokemons have fainted in each team
+        n_fainted_mon_team = (
             len([mon for mon in battle.team.values() if mon.fainted])
         )
-        fainted_mon_opponent = (
+        n_fainted_mon_opponent = (
             len([mon for mon in battle.opponent_team.values() if mon.fainted])
         )
 
@@ -399,16 +431,19 @@ class ValidationPlayer(PlayerQLearning):
             state.append('{0:.2f}'.format(move_base_power))
         for move_dmg_multiplier in moves_dmg_multiplier:
             state.append('{0:.2f}'.format(move_dmg_multiplier))
-        state.append(fainted_mon_team)
-        state.append(fainted_mon_opponent)
+        state.append(n_fainted_mon_team)
+        state.append(n_fainted_mon_opponent)
 
         return str(state)
+
+
+# In[ ]:
 
 
 # global parameters
 
 # possible values for num_battles (number of episodes)
-n_battles_array = [1000, 10000]
+n_battles_array = [10000]
 # exploration schedule from MC, i. e., epsilon(t) = N0 / (N0 + N(S(t)))
 n0_array = [0.0001, 0.001, 0.01]
 # possible values for gamma (discount factor)
@@ -421,6 +456,9 @@ list_of_params = [
         'gamma': gamma
     } for n_battles, n0, gamma in product(n_battles_array, n0_array, gamma_array)
 ]
+
+
+# In[ ]:
 
 
 # json helper functions
@@ -453,6 +491,9 @@ def read_dict_from_json(path_dir, filename):
     data = json.load(file)
     file.close()
     return data
+
+
+# In[ ]:
 
 
 # main (let's battle!)
@@ -507,140 +548,10 @@ loop = asyncio.get_event_loop()
 loop.run_until_complete(loop.create_task(do_battle_training()))
 
 
-# plotting helper functions
-
-def plot_2d(path, title, x_label, x_array, y_label, y_array):
-    # print("plotting %s" % title)
-    # set labels and plot surface
-    figure = matplotlib.pyplot.figure(figsize=(20, 10))
-    ax = figure.gca()
-    ax.set_title(title)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
-    ax.plot(x_array, y_array)
-    # pyplot.show()
-    if not os.path.exists(path):
-        os.makedirs(path)
-    filename = path + "/" + title + "_" + x_label + "_" + y_label + "_" + ".pdf"
-    figure.savefig(filename, dpi=figure.dpi)
-    pyplot.close(figure)
-    # print("done!")
+# In[ ]:
 
 
-def plot_3d(path, title, x_label, x_array, y_label, y_array, z_label, z_array):
-    # print("plotting %s" % title)
-    xyz = {'x': x_array, 'y': y_array, 'z': z_array}
-    df = pd.DataFrame(xyz, index=range(len(xyz['x'])))
-    xv, yv = np.meshgrid(x_array, y_array)
-    zv = griddata((df['x'], df['y']), df['z'], (xv, yv), method='nearest')
-    # set labels and plot surface
-    figure = matplotlib.pyplot.figure(figsize=(20, 10))
-    ax = figure.gca(projection='3d')
-    ax.set_title(title)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
-    ax.set_zlabel(z_label)
-    surface = ax.plot_surface(xv, yv, zv, rstride=1, cstride=1, cmap=matplotlib.cm.coolwarm, linewidth=0,
-                              antialiased=False)
-    figure.colorbar(surface)
-    # pyplot.show()
-    if not os.path.exists(path):
-        os.makedirs(path)
-    filename = path + "/" + title + ".pdf"
-    figure.savefig(filename, dpi=figure.dpi)
-    pyplot.close(figure)
-    # print("done!")
-
-
-# plot value from state-action pair
-
-# def plot_v_from_state_action_json(path_dir, x_label, x_func, y_label, y_func):
-#     # open files
-#     for filename in os.listdir(path_dir):
-#         q = dict()
-#         q_json = read_dict_from_json(path_dir, filename)
-#         for key in q_json.keys():
-#             q[key] = np.array(q_json[key])
-#         x_values = []
-#         y_values = []
-#         z_values = []
-#         # for state, actions
-#         for state, actions in q.items():
-#             state = re.sub(r"[,!?><:'\[\]()@*~#]", "", state)
-#             key_float = [float(k) for k in state.split()]
-#             x_emb = x_func(key_float)
-#             x_values.append(x_emb)
-#             y_emb = y_func(key_float)
-#             y_values.append(y_emb)
-#             action_value = np.max(actions)
-#             z_values.append(action_value)
-#         # plot 3D
-#         title = "v_from_" + filename
-#         plot_3d("./Q_Learning_plot",
-#                 title,
-#                 x_label,
-#                 np.array(x_values).astype(np.float),
-#                 y_label, np.array(y_values).astype(np.float),
-#                 "V",
-#                 np.array(z_values).astype(np.float))
-
-
-# plots from Q
-# plot_v_from_state_action_json(path_dir="./Q_Learning_table",
-#                               x_label="20 * index_pokemon + sum(moves_base_power * moves_dmg_multiplier)",
-#                               x_func=lambda k: 20 * k[0] + k[1] * k[5] + k[2] * k[6] + k[3] * k[7] + k[4] * k[8],
-#                               y_label="remaining_mon_team - remaining_mon_opponent",
-#                               y_func=lambda k: k[8] - k[9])
-
-
-# plot additional statistics
-
-def plot_statistics_json(path_dir, filename="statistics.json"):
-    # plots from statistics.json
-    statistics = read_dict_from_json(path_dir, filename)
-    # acc victories vs. episode number
-    for key in statistics.keys():
-        key_elements = key.split("_")
-        n_battles = key_elements[0]
-        n0 = key_elements[1]
-        gamma = key_elements[2]
-        value = statistics[key]
-        plot_2d(path="./Q_Learning_plot",
-                title="acc_victories_n_battles_" + n_battles + "_N0_" + n0 + "_gamma_" + gamma,
-                x_label="episodes",
-                x_array=np.array(range(0, len(value))),
-                y_label="acc victories",
-                y_array=np.cumsum(value).astype(np.int))
-
-    # winning % by set of parameters
-    n_battles = ""
-    x_values = []
-    y_values = []
-    z_values = []
-    for key in statistics.keys():
-        key_elements = key.split("_")
-        n_battles = key_elements[0]
-        n0 = key_elements[1]
-        gamma = key_elements[2]
-        value = statistics[key]
-        x_values.append(n0)
-        y_values.append(gamma)
-        z_values.append(value.count(True) / len(value))
-    plot_3d(path="./Q_Learning_plot",
-            title="winning_percentage_n_battles_" + n_battles,
-            x_label="N0",
-            x_array=np.array(x_values).astype(np.float),
-            y_label="gamma",
-            y_array=np.array(y_values).astype(np.float),
-            z_label="winning %",
-            z_array=np.array(z_values))
-
-
-# plots from statistics
-plot_statistics_json("./Q_Learning_statistics")
-
-
-# validation
+# validation vs maxPlayer
 
 async def do_battle_validation(path_dir):
     # read from json
@@ -676,3 +587,299 @@ async def do_battle_validation(path_dir):
 if use_validation:
     loop = asyncio.get_event_loop()
     loop.run_until_complete(loop.create_task(do_battle_validation("./Q_Learning_table")))
+
+
+# In[ ]:
+
+
+# validation vs randomPlayer
+
+async def do_battle_validation(path_dir):
+    # read from json
+    for filename in os.listdir(path_dir):
+        # Q-learned table
+        q = defaultdict()
+        q_json = read_dict_from_json(path_dir, filename)
+        for key in q_json.keys():
+            q[key] = np.array(q_json[key])
+        # params: n_battles, n0, gamma
+        params = filename.split("_")
+        n_battles = int(params[2])
+        n0 = float(params[3])
+        gamma = float(params[4])
+
+        # validation (play 1/3 of the battles using Q-learned table)
+        start = time.time()
+        validation_player = ValidationPlayer(battle_format="gen8ou", team=OUR_TEAM, q=q)
+        opponent = MaxDamagePlayer(battle_format="gen8ou", team=OP_TEAM)
+        n_battles_validation = int(n_battles / 3)
+        await validation_player.battle_against(opponent=opponent, n_battles=n_battles_validation)
+        print("validation: num battles (episodes)=%d, N0=%.4f, gamma=%.2f, wins=%d, winning %%=%.2f, total time=%s sec" %
+              (
+                  n_battles_validation,
+                  n0,
+                  gamma,
+                  validation_player.n_won_battles,
+                  round((validation_player.n_won_battles / n_battles_validation) * 100, 2),
+                  round(time.time() - start, 2)
+              ))
+
+
+if use_validation:
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(loop.create_task(do_battle_validation("./Q_Learning_table")))
+
+
+# In[1]:
+
+
+import os
+import json
+import re
+from datetime import date
+today = date.today()
+
+
+# In[7]:
+
+
+from matplotlib import pyplot as plt
+
+
+# In[2]:
+
+
+output_folder = "images/vfunction"
+
+
+# In[13]:
+
+
+# x: index_pokemon*20+sum(moves_base_power * moves_dmg_multiplier)
+# y: remaining_mon_team - remaining_mon_opponent
+# z: value function
+v_array = []
+directoryQ = r'S:\poke_env\dump\211104\Q_Learning_table'
+
+for filenameQ in os.listdir(directoryQ):
+    Qjson_file = open(directoryQ+'/'+filenameQ,)
+    Qjson = json.load(Qjson_file)
+
+    for key in Qjson:
+        Qjson[key] = np.array(Qjson[key])
+        
+    z_values = []
+    x_values = []
+    y_values = []
+    #for state, actions in test['player_val'].Q.items():
+    for state, actions in Qjson.items():    
+        action_value = np.max(actions)
+        z_values.append(action_value)
+        state = re.sub(r"[,!?><:'\[\]()@*~#]","", state)
+        key_float = [float(k) for k in state.split()]
+        x_emb = key_float[0]*20+key_float[1]*key_float[5]+key_float[2]*key_float[6]+key_float[3]*key_float[7]+key_float[4]*key_float[8]
+        x_values.append(x_emb)
+        y_emb = key_float[8]-key_float[9]
+        y_values.append(y_emb)
+        #V[x_emb,y_emb] = action_value
+    v_array.append((x_values, y_values, z_values))
+
+
+# In[14]:
+
+
+# x: index_pokemon*20+sum(moves_base_power * moves_dmg_multiplier)
+# y: remaining_mon_team - remaining_mon_opponent
+# z: value function
+import pandas as pd
+from scipy.interpolate import griddata
+# create 1D-arrays from the 2D-arrays
+for vvalue, filenameQ in zip(v_array, os.listdir(directoryQ)):
+    filenameQ = re.sub(r"[,.!?><:'\[\]()@*~#]","_", filenameQ)
+    x_values, y_values, z_values = vvalue 
+    z_plot = np.array(z_values).reshape(len(z_values),1)
+    x_plot = np.array(x_values)
+    y_plot = np.array(y_values)
+    xyz = {'x': x_plot, 'y': y_plot, 'z': np.array(z_values)}
+    df = pd.DataFrame(xyz, index=range(len(xyz['x']))) 
+    x1 = np.linspace(df['x'].min(), df['x'].max(), len(df['x'].unique()))
+    y1 = np.linspace(df['y'].min(), df['y'].max(), len(df['y'].unique()))
+    x2, y2 = np.meshgrid(x1, y1)
+    z2 = griddata((df['x'], df['y']), df['z'], (x2, y2), method='nearest')
+
+    fig = plt.figure(figsize=(20, 10))
+    ax = fig.gca(projection='3d')
+    ax.set_xlabel('index_pokemon*20+sum(moves_base_power * moves_dmg_multiplier)')
+    ax.set_ylabel('remaining_mon_team - remaining_mon_opponent')
+    ax.set_zlabel('Value')
+    ax.set_title('Value - Index for x axis: 0 venusaur;  1*20 pikachuoriginal; 2*20 tauros, 3*20 sirfetchd, 4*20 blastoise, 5*20 charizard')
+
+    surf = ax.plot_surface(x2, y2, z2, rstride=1, cstride=1, cmap=matplotlib.cm.coolwarm,
+        linewidth=0, antialiased=False)
+    fig.colorbar(surf)
+    filename = filenameQ+'_Stoc_Index.pdf'
+    path_plot = output_folder+'/QLearning/'
+    if not os.path.exists(path_plot):
+        os.makedirs(path_plot)
+    plt.savefig(path_plot+filename) 
+    plt.show()
+
+
+# In[15]:
+
+
+# x: sum(moves_base_power * moves_dmg_multiplier)
+# y: remaining_mon_team - remaining_mon_opponent
+# z: value function
+
+v_array = []
+directoryQ = r'S:\poke_env\dump\211104\Q_Learning_table'
+
+for filenameQ in os.listdir(directoryQ):
+    Qjson_file = open(directoryQ+'/'+filenameQ,)
+    Qjson = json.load(Qjson_file)
+
+    for key in Qjson:
+        Qjson[key] = np.array(Qjson[key])
+        
+    z_values = []
+    x_values = []
+    y_values = []
+
+    for state, actions in Qjson.items():    
+        action_value = np.max(actions)
+        z_values.append(action_value)
+        state = re.sub(r"[,!?><:'\[\]()@*~#]","", state)
+        key_float = [float(k) for k in state.split()]
+        x_emb = key_float[1]*key_float[5]+key_float[2]*key_float[6]+key_float[3]*key_float[7]+key_float[4]*key_float[8]
+        x_values.append(x_emb)
+        y_emb = key_float[8]-key_float[9]
+        y_values.append(y_emb)
+        #V[x_emb,y_emb] = action_value
+    v_array.append((x_values, y_values, z_values))
+
+
+# In[16]:
+
+
+# x: sum(moves_base_power * moves_dmg_multiplier)
+# y: remaining_mon_team - remaining_mon_opponent
+# z: value function
+import pandas as pd
+from scipy.interpolate import griddata
+# create 1D-arrays from the 2D-arrays
+for vvalue, filenameQ in zip(v_array, os.listdir(directoryQ)):
+    filenameQ = re.sub(r"[,!?.><:'\[\]()@*~#]","_", filenameQ)
+    x_values, y_values, z_values = vvalue 
+    z_plot = np.array(z_values).reshape(len(z_values),1)
+    x_plot = np.array(x_values)
+    y_plot = np.array(y_values)
+    xyz = {'x': x_plot, 'y': y_plot, 'z': np.array(z_values)}
+    df = pd.DataFrame(xyz, index=range(len(xyz['x']))) 
+    x1 = np.linspace(df['x'].min(), df['x'].max(), len(df['x'].unique()))
+    y1 = np.linspace(df['y'].min(), df['y'].max(), len(df['y'].unique()))
+    x2, y2 = np.meshgrid(x1, y1)
+    z2 = griddata((df['x'], df['y']), df['z'], (x2, y2), method='nearest')
+
+    fig = plt.figure(figsize=(20, 10))
+    ax = fig.gca(projection='3d')
+    ax.set_xlabel('sum(moves_base_power * moves_dmg_multiplier)')
+    ax.set_ylabel('remaining_mon_team - remaining_mon_opponent')
+    ax.set_zlabel('Value')
+    ax.set_title('Value - No Index')
+
+    surf = ax.plot_surface(x2, y2, z2, rstride=1, cstride=1, cmap=matplotlib.cm.coolwarm,
+        linewidth=0, antialiased=False)
+    fig.colorbar(surf)
+    filename = filenameQ+'_Stoc_noIndex.pdf'
+    path_plot = output_folder+'/QLearning/'
+    if not os.path.exists(path_plot):
+        os.makedirs(path_plot)
+    plt.savefig(path_plot+filename) 
+    plt.show()
+
+
+# In[17]:
+
+
+# x: (remaining_mon_team - remaining_mon_opponent)*sum(moves_base_power * moves_dmg_multiplier)
+# y: action
+# z: value function
+v_array = []
+directoryQ = r'S:\poke_env\dump\211104\Q_Learning_table'
+
+for filenameQ in os.listdir(directoryQ):
+    Qjson_file = open(directoryQ+'/'+filenameQ,)
+    Qjson = json.load(Qjson_file)
+
+    for key in Qjson:
+        Qjson[key] = np.array(Qjson[key])
+        
+    z_values = []
+    x_values = []
+    y_values = []
+    for state, actions in Qjson.items(): 
+        
+        action_value = np.max(actions)
+        z_values.append(action_value)
+        state = re.sub(r"[,!?><:'\[\]()@*~#]","", state)
+        key_float = [float(k) for k in state.split()]
+        x_emb = (key_float[8]-key_float[9])*(key_float[1]*key_float[5]+key_float[2]*key_float[6]+key_float[3]*key_float[7]+key_float[4]*key_float[8])
+        x_values.append(x_emb)
+        y_emb = np.argmax(actions)
+        y_values.append(y_emb)
+        #V[x_emb,y_emb] = action_value
+    v_array.append((x_values, y_values, z_values))
+
+
+# In[18]:
+
+
+# x: (remaining_mon_team - remaining_mon_opponent)*sum(moves_base_power * moves_dmg_multiplier)
+# y: action
+# z: value function
+
+import pandas as pd
+from scipy.interpolate import griddata
+for vvalue, filenameQ in zip(v_array, os.listdir(directoryQ)):
+    filenameQ = re.sub(r"[,!?.><:'\[\]()@*~#]","_", filenameQ)
+    x_values, y_values, z_values = vvalue 
+    z_plot = np.array(z_values).reshape(len(z_values),1)
+    x_plot = np.array(x_values)
+    y_plot = np.array(y_values)
+    xyz = {'x': x_plot, 'y': y_plot, 'z': np.array(z_values)}
+    df = pd.DataFrame(xyz, index=range(len(xyz['x']))) 
+    x1 = np.linspace(df['x'].min(), df['x'].max(), len(df['x'].unique()))
+    y1 = np.linspace(df['y'].min(), df['y'].max(), len(df['y'].unique()))
+    x2, y2 = np.meshgrid(x1, y1)
+    z2 = griddata((df['x'], df['y']), df['z'], (x2, y2), method='nearest')
+
+    fig = plt.figure(figsize=(20, 10))
+    ax = fig.gca(projection='3d')
+    ax.set_xlabel('(remaining_mon_team - remaining_mon_opponent)*sum(moves_base_power * moves_dmg_multiplier)')
+    ax.set_ylabel('action')
+    ax.set_zlabel('Value')
+    ax.set_title('Value Function - No index')
+
+    surf = ax.plot_surface(x2, y2, z2, rstride=1, cstride=1, cmap=matplotlib.cm.coolwarm,
+        linewidth=0, antialiased=False)
+    fig.colorbar(surf)
+    filename = filenameQ+'_Stoc_noIndex_action.pdf'
+    path_plot = output_folder+'/QLearning/'
+    if not os.path.exists(path_plot):
+        os.makedirs(path_plot)
+    plt.savefig(path_plot+filename)     
+    plt.show()    
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
