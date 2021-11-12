@@ -1,4 +1,4 @@
-Code repository with classic reinforcement learning methods using [poke_env environment](poke-env.readthedocs.io/en/latest/).
+Code repository with classical reinforcement learning methods using [poke_env environment](poke-env.readthedocs.io/en/latest/).
 
 It is necessary to install the requirements available at [requirements_poke_env.yml](https://github.com/leolellisr/poke_RL/blob/master/requirements_poke_env.yml).
 
@@ -10,9 +10,9 @@ Graphics available at:
 * [Graphs MC Control, MC Control FA, Q-Learning, Q-Learning FA, SARSA($\lambda$) Deterministic and SARSA($\lambda$) FA](https://app.neptune.ai/leolellisr/rl-pokeenv)
 * [Graphs SARSA($\lambda$) Stochastic](https://app.neptune.ai/mauricioplopes/poke-env)
 
-Notebooks of available methods available [here](https://github.com/leolellisr/poke_RL/tree/master/notebooks)
+Notebooks of implemented methods available [here](https://github.com/leolellisr/poke_RL/tree/master/notebooks)
 
-Equivalent python files of available methods available [here](https://github.com/leolellisr/poke_RL/tree/master/py)
+Equivalent python files of implemented methods available [here](https://github.com/leolellisr/poke_RL/tree/master/py)
 
 json files of trained tabular methods available [here](https://drive.google.com/drive/folders/1GwNQSsOR0PPtPKlbIy9NzWvTnTtMOD8_?usp=sharing)
 
