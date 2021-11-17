@@ -111,9 +111,9 @@ When a selected action cannot be executed, we random select another possible act
  
 ### Stochastic Team
 
-Our stochastic team, with each Pokémon, their abilities, natures, items, moves (base power and accuracy) and possible switches are shown in [Team](https://prnt.sc/1y73c3t).
+Our stochastic team, with each Pokémon, their abilities, natures, items, moves (base power and accuracy) and possible switches are shown in [Team](https://imgur.com/KSXvlmO).
 
-The stochastic opponent team, with each Pokémon, their abilities, natures, items, moves (base power and accuracy) and possible switches are shown in [Opponent Team](https://prnt.sc/1ywz4eh).
+The stochastic opponent team, with each Pokémon, their abilities, natures, items, moves (base power and accuracy) and possible switches are shown in [Opponent Team](https://imgur.com/rLF5Cli).
 
 ## Deterministic
 
@@ -153,15 +153,15 @@ When a selected action cannot be executed, we random select another possible act
  
 ### Deterministic Team
 
-Our deterministic team, with each Pokémon, their abilities, natures, items, moves (base power and accuracy) and possible switches are shown in [Team](https://prnt.sc/1ydn52l).
+Our deterministic team, with each Pokémon, their abilities, natures, items, moves (base power and accuracy) and possible switches are shown in [Team](https://imgur.com/DeRAEQb).
 
-The deterministic opponent team, with each Pokémon, their abilities, natures, items, moves (base power and accuracy) and possible switches are shown in [Opponent Team](https://prnt.sc/1ywzfhx).
+The deterministic opponent team, with each Pokémon, their abilities, natures, items, moves (base power and accuracy) and possible switches are shown in [Opponent Team](https://imgur.com/Hltn5OO).
 
 We use on both teams only Pokémon with Battle Armor or Shell Armor abilities, which prevent critical hits from being performed. Also, we use in both teams only moves with 100% accuracy, with no chance of getting it missed, and the move haven't additional effects.
 
 ## Search space
 
-The features that integrate our states are shown in [this figure](https://prnt.sc/1yfksfe). For a single battle between two players with 6 Pokémon each, we have $1.016.064$ possible states.
+The features that integrate our states are shown in [this figure](https://imgur.com/tREjWCG). For a single battle between two players with 6 Pokémon each, we have $1.016.064$ possible states.
 
 Since we have 9 possible actions for each Pokémon, we total $9.144.576$ possibilities for each battle.
 
@@ -169,7 +169,7 @@ Since we have 9 possible actions for each Pokémon, we total $9.144.576$ possibi
 
 The environment used is [Pokémon Showdown](https://play.pokemonshowdown.com), a [open-source](https://github.com/smogon/pokemon-showdown.git) Pokémon battle simulator.
 
-[Example](https://prnt.sc/1ydofwv) of one battle in Pokémon Showdown.
+[Example](https://imgur.com/hjHikuc) of one battle in Pokémon Showdown.
 
 To communicate our agents with Pokémon Showdown we used [poke-env](https://poke-env.readthedocs.io/en/latest/) a Python environment for interacting in pokemon showdown battles.
 
@@ -220,7 +220,7 @@ To adapt our environment to a deterministic setup, we had to establish the follo
 
 # Comparisons
 
-One table with performance comparisons in Validation between our methods and some methods proposed in literature are showed in [this figure](https://prnt.sc/1ytqrzm).
+One table with performance comparisons in Validation between our methods and some methods proposed in literature are showed in [this figure](https://imgur.com/vwUOnDZ).
 
 The method with the best performance against both Players (MaxDamagePlayer and RandomPlayer) was Q-Learning Function Approximation in the Stochastic environment.
 
