@@ -16,7 +16,7 @@ from poke_env.player.random_player import RandomPlayer
 from poke_env.environment.abstract_battle import AbstractBattle
 from poke_env.player.battle_order import ForfeitBattleOrder
 
-
+from rl.agents.dqn import DQNAgent
 from rl.policy import LinearAnnealedPolicy, EpsGreedyQPolicy
 from rl.memory import SequentialMemory
 from tensorflow.keras.layers import Dense, Flatten
@@ -172,8 +172,8 @@ class DQL_RLPlayer(Gen8EnvSinglePlayer):
             super().__init__(battle_format=battle_format, team=team)
             self.mode = mode 
             self.num_battles = 0
-            self.num_battles_avg = 0
-            self.n_won_battles_avg = self.n_won_battles
+            #self.num_battles_avg = 0
+            #self.n_won_battles_avg = self.n_won_battles
             self._ACTION_SPACE = list(range(4 + 5))
     def embed_battle(self, battle):
         # -1 indicates that the move does not have a base power
@@ -298,7 +298,7 @@ class DQL_RLPlayer(Gen8EnvSinglePlayer):
         self._reward_buffer[battle] = current_value
         if use_neptune:
             run[f'{self.mode} reward_buffer'].log(current_value)
-            run[f'{self.mode} accum. reward_buffer'].log(sum(_reward_buffer))
+        #    run[f'{self.mode} accum. reward_buffer'].log(sum(self._reward_buffer.values()))
         return to_return
 
     # Calling reward_computing_helper
@@ -307,14 +307,14 @@ class DQL_RLPlayer(Gen8EnvSinglePlayer):
         
     def _battle_finished_callback(self, battle):
         self.num_battles += 1
-        self.num_battles_avg += 1
+        #self.num_battles_avg += 1
         if use_neptune:
             run[f'{self.mode} win_acc'].log(self.n_won_battles / self.num_battles)
-            run[f'{self.mode} win_acc avg'].log(self.n_won_battles_avg / self.num_battles_avg)
+        #    run[f'{self.mode} win_acc avg'].log(self.n_won_battles_avg / self.num_battles_avg)
 
-        if self.num_battles%100==0:
-            self.num_battles_avg = 0
-            self.n_won_battles_avg = 0
+        #if self.num_battles%100==0:
+        #    self.num_battles_avg = 0
+        #    self.n_won_battles_avg = 0
 
         self._observations[battle].put(self.embed_battle(battle))
 
@@ -416,7 +416,7 @@ if __name__ == "__main__":
 
     # Defining our DQN / https://github.com/keras-rl/keras-rl/blob/master/rl/agents/dqn.py
 
-    dqn = rl.agents.dqn.DQNAgent(
+    dqn = DQNAgent(
         model=model,
         nb_actions=len(env_player.action_space),
         policy=policy,
