@@ -35,137 +35,49 @@ from collections import defaultdict
 from datetime import date
 from itertools import product
 from scipy.interpolate import griddata
+import argparse
 
-debug = True
-use_neptune = True
+def parse_args():
+    # fmt: off
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--exp-name', type=str, default=os.path.basename(__file__).rstrip(".py"),
+        help='the name of this experiment')
+    parser.add_argument('--debug', type=lambda x:bool(strtobool(x)), default=False, nargs='?', const=True,
+        help='if toggled, debug will be enabled')
+    parser.add_argument('--neptune', type=lambda x:bool(strtobool(x)), default=False, nargs='?', const=True,
+        help='if toggled, neptune will be enabled')   
+    parser.add_argument('--train', type=lambda x:bool(strtobool(x)), default=True, nargs='?', const=True,
+        help='if toggled, train will be realized') 
+    parser.add_argument('--saved', type=lambda x:bool(strtobool(x)), default=False, nargs='?', const=True,
+        help='if toggled, use saved trained model will be realized')     
+    parser.add_argument('--model-folder', type=str, default="/model",
+        help='folder of trained model (just for validation)')       
+    parser.add_argument('--env', type=str, default="stochastic",    
+        help='type of environment (stochastic or deterministic). Define teams. OBS: must change showdown too.')
+
+    # Agent parameters
+    parser.add_argument('--policy', type=str, default="lin_epsGreedy",
+        help='applied policy')            
+    parser.add_argument('--hidden', type=int, default=128,
+        help="Hidden layers applied on our nn") 
+    parser.add_argument('--gamma', type=float, default=0.75,
+        help="gamma value used on DQN") 
+    parser.add_argument('--enable-double-dqn', type=lambda x:bool(strtobool(x)), default=True, nargs='?', const=True,
+        help='enable doubleDQN')
+    parser.add_argument('--adamlr', type=float, default=0.00025,
+        help="learning rate used on Adam")    
+
+    # Training parameters
+    parser.add_argument('--epochs', type=int, default=30,
+        help="n epochs")    
+    parser.add_argument('--battles', type=int, default=10000,
+        help="n steps per epoch")
+    
+    args = parser.parse_args()
+    return args
 
 nest_asyncio.apply()
 np.random.seed(0)
-
-if use_neptune:
-    run = neptune.init(project='leolellisr/rl-pokeenv',
-                       api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI1NjY1YmJkZi1hYmM5LTQ3M2QtOGU1ZC1iZTFlNWY4NjE1NDQifQ==',
-                       tags=["DeepRL", "Deep Q-learning", "DQN", "stochastic", "elu", "keras2018", "300k steps"])
-
-# our team
-
-OUR_TEAM = """ 
-Pikachu-Original (M) @ Light Ball  
-Ability: Static  
-EVs: 252 Atk / 4 SpD / 252 Spe  
-Adamant Nature  
-- Volt Tackle  
-- Nuzzle  
-- Iron Tail  
-- Knock Off  
-
-Charizard @ Life Orb  
-Ability: Solar Power  
-EVs: 252 SpA / 4 SpD / 252 Spe  
-Timid Nature  
-IVs: 0 Atk  
-- Flamethrower  
-- Dragon Pulse  
-- Roost  
-- Sunny Day  
-
-Blastoise @ White Herb  
-Ability: Torrent  
-EVs: 4 Atk / 252 SpA / 252 Spe  
-Mild Nature  
-- Scald  
-- Ice Beam  
-- Earthquake  
-- Shell Smash  
-
-Venusaur @ Black Sludge  
-Ability: Chlorophyll  
-EVs: 252 SpA / 4 SpD / 252 Spe  
-Modest Nature  
-IVs: 0 Atk  
-- Giga Drain  
-- Sludge Bomb  
-- Sleep Powder  
-- Leech Seed  
-
-Sirfetch’d @ Aguav Berry  
-Ability: Steadfast  
-EVs: 248 HP / 252 Atk / 8 SpD  
-Adamant Nature  
-- Close Combat  
-- Swords Dance  
-- Poison Jab  
-- Knock Off  
-
-Tauros (M) @ Assault Vest  
-Ability: Intimidate  
-EVs: 252 Atk / 4 SpD / 252 Spe  
-Adamant Nature  
-- Double-Edge  
-- Earthquake  
-- Megahorn  
-- Iron Head  
-"""
-
-OP_TEAM = """
-Eevee @ Eviolite  
-Ability: Adaptability  
-EVs: 252 HP / 252 Atk / 4 SpD  
-Jolly Nature  
-- Quick Attack  
-- Flail  
-- Facade  
-- Wish  
-
-Vaporeon @ Leftovers  
-Ability: Hydration  
-EVs: 252 HP / 252 Def / 4 SpA  
-Bold Nature  
-IVs: 0 Atk  
-- Scald  
-- Shadow Ball  
-- Toxic  
-- Wish  
-
-Sylveon @ Aguav Berry  
-Ability: Pixilate  
-EVs: 252 HP / 252 SpA / 4 SpD  
-Modest Nature  
-IVs: 0 Atk  
-- Hyper Voice  
-- Mystical Fire  
-- Psyshock  
-- Calm Mind  
-
-Jolteon @ Assault Vest  
-Ability: Quick Feet  
-EVs: 252 SpA / 4 SpD / 252 Spe  
-Timid Nature  
-IVs: 0 Atk  
-- Thunderbolt  
-- Hyper Voice  
-- Volt Switch  
-- Shadow Ball  
-
-Leafeon @ Life Orb  
-Ability: Chlorophyll  
-EVs: 252 Atk / 4 SpD / 252 Spe  
-Jolly Nature  
-- Leaf Blade  
-- Knock Off  
-- X-Scissor  
-- Swords Dance  
-
-Umbreon @ Iapapa Berry  
-Ability: Inner Focus  
-EVs: 252 HP / 4 Atk / 252 SpD  
-Careful Nature  
-- Foul Play  
-- Body Slam  
-- Toxic  
-- Wish  
-"""
-
 
 class DQL_RLPlayer(Gen8EnvSinglePlayer):
     def __init__(self, battle_format, team, mode):
@@ -296,7 +208,7 @@ class DQL_RLPlayer(Gen8EnvSinglePlayer):
         # Value to return
         to_return = current_value - self._reward_buffer[battle]
         self._reward_buffer[battle] = current_value
-        if use_neptune:
+        if args.neptune:
             run[f'{self.mode} reward_buffer'].log(current_value)
         #    run[f'{self.mode} accum. reward_buffer'].log(sum(self._reward_buffer.values()))
         return to_return
@@ -308,7 +220,7 @@ class DQL_RLPlayer(Gen8EnvSinglePlayer):
     def _battle_finished_callback(self, battle):
         self.num_battles += 1
         #self.num_battles_avg += 1
-        if use_neptune:
+        if args.neptune:
             run[f'{self.mode} win_acc'].log(self.n_won_battles / self.num_battles)
         #    run[f'{self.mode} win_acc avg'].log(self.n_won_battles_avg / self.num_battles_avg)
 
@@ -330,37 +242,7 @@ class MaxDamagePlayer(RandomPlayer):
         else:
             return self.choose_random_move(battle)
 
-EPOCHS = 30
-NB_TRAINING_EPISODES = 10000
-NB_TRAINING_STEPS = NB_TRAINING_EPISODES*EPOCHS
-NB_EVALUATION_EPISODES = int(NB_TRAINING_EPISODES/3)
 
-N_STATE_COMPONENTS = 12
-# num of features = num of state components + action
-N_FEATURES = N_STATE_COMPONENTS + 1
-
-N_OUR_MOVE_ACTIONS = 4
-N_OUR_SWITCH_ACTIONS = 5
-N_OUR_ACTIONS = N_OUR_MOVE_ACTIONS + N_OUR_SWITCH_ACTIONS
-
-ALL_OUR_ACTIONS = np.array(range(0, N_OUR_ACTIONS))
-
-N_HIDDEN = 128
-
-NAME_TO_ID_DICT = {
-    "pikachuoriginal": 0,
-    "charizard": 1,
-    "blastoise": 2,
-    "venusaur": 3,
-    "sirfetchd": 4,
-    "tauros": 5,
-    "eevee": 6,
-    "vaporeon": 7,
-    "sylveon": 8,
-    "jolteon": 9,
-    "leafeon": 10,
-    "umbreon": 11
-}
 
 tf.random.set_seed(0)
 np.random.seed(0)
@@ -384,7 +266,295 @@ def dqn_evaluation(player, dqn, nb_episodes):
 
 
 if __name__ == "__main__":
-    env_player = DQL_RLPlayer(battle_format="gen8ou", team=OUR_TEAM, mode = "train")
+
+    args = parse_args()
+
+    if args.neptune:
+        run = neptune.init(project='leolellisr/rl-pokeenv',
+                        api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI1NjY1YmJkZi1hYmM5LTQ3M2QtOGU1ZC1iZTFlNWY4NjE1NDQifQ==',
+                        tags=["DeepRL", args.exp_name, args.env, str(args.epochs)+"epochs"])
+
+    if args.env == "stochastic":
+        # our team
+        OUR_TEAM = """ 
+        Pikachu-Original (M) @ Light Ball  
+        Ability: Static  
+        EVs: 252 Atk / 4 SpD / 252 Spe  
+        Adamant Nature  
+        - Volt Tackle  
+        - Nuzzle  
+        - Iron Tail  
+        - Knock Off  
+
+        Charizard @ Life Orb  
+        Ability: Solar Power  
+        EVs: 252 SpA / 4 SpD / 252 Spe  
+        Timid Nature  
+        IVs: 0 Atk  
+        - Flamethrower  
+        - Dragon Pulse  
+        - Roost  
+        - Sunny Day  
+
+        Blastoise @ White Herb  
+        Ability: Torrent  
+        EVs: 4 Atk / 252 SpA / 252 Spe  
+        Mild Nature  
+        - Scald  
+        - Ice Beam  
+        - Earthquake  
+        - Shell Smash  
+
+        Venusaur @ Black Sludge  
+        Ability: Chlorophyll  
+        EVs: 252 SpA / 4 SpD / 252 Spe  
+        Modest Nature  
+        IVs: 0 Atk  
+        - Giga Drain  
+        - Sludge Bomb  
+        - Sleep Powder  
+        - Leech Seed  
+
+        Sirfetch’d @ Aguav Berry  
+        Ability: Steadfast  
+        EVs: 248 HP / 252 Atk / 8 SpD  
+        Adamant Nature  
+        - Close Combat  
+        - Swords Dance  
+        - Poison Jab  
+        - Knock Off  
+
+        Tauros (M) @ Assault Vest  
+        Ability: Intimidate  
+        EVs: 252 Atk / 4 SpD / 252 Spe  
+        Adamant Nature  
+        - Double-Edge  
+        - Earthquake  
+        - Megahorn  
+        - Iron Head  
+        """
+
+        OP_TEAM = """
+        Eevee @ Eviolite  
+        Ability: Adaptability  
+        EVs: 252 HP / 252 Atk / 4 SpD  
+        Jolly Nature  
+        - Quick Attack  
+        - Flail  
+        - Facade  
+        - Wish  
+
+        Vaporeon @ Leftovers  
+        Ability: Hydration  
+        EVs: 252 HP / 252 Def / 4 SpA  
+        Bold Nature  
+        IVs: 0 Atk  
+        - Scald  
+        - Shadow Ball  
+        - Toxic  
+        - Wish  
+
+        Sylveon @ Aguav Berry  
+        Ability: Pixilate  
+        EVs: 252 HP / 252 SpA / 4 SpD  
+        Modest Nature  
+        IVs: 0 Atk  
+        - Hyper Voice  
+        - Mystical Fire  
+        - Psyshock  
+        - Calm Mind  
+
+        Jolteon @ Assault Vest  
+        Ability: Quick Feet  
+        EVs: 252 SpA / 4 SpD / 252 Spe  
+        Timid Nature  
+        IVs: 0 Atk  
+        - Thunderbolt  
+        - Hyper Voice  
+        - Volt Switch  
+        - Shadow Ball  
+
+        Leafeon @ Life Orb  
+        Ability: Chlorophyll  
+        EVs: 252 Atk / 4 SpD / 252 Spe  
+        Jolly Nature  
+        - Leaf Blade  
+        - Knock Off  
+        - X-Scissor  
+        - Swords Dance  
+
+        Umbreon @ Iapapa Berry  
+        Ability: Inner Focus  
+        EVs: 252 HP / 4 Atk / 252 SpD  
+        Careful Nature  
+        - Foul Play  
+        - Body Slam  
+        - Toxic  
+        - Wish  
+        """
+
+        NAME_TO_ID_DICT = {
+            "pikachuoriginal": 0,
+            "charizard": 1,
+            "blastoise": 2,
+            "venusaur": 3,
+            "sirfetchd": 4,
+            "tauros": 5,
+            "eevee": 0,
+            "vaporeon": 1,
+            "sylveon": 2,
+            "jolteon": 3,
+            "leafeon": 4,
+            "umbreon": 5
+        }  
+
+    else:
+        OUR_TEAM = """
+        Turtonator @ White Herb  
+        Ability: Shell Armor  
+        EVs: 4 Atk / 252 SpA / 252 Spe  
+        Rash Nature  
+        - Flamethrower  
+        - Dragon Pulse  
+        - Earthquake  
+        - Shell Smash  
+
+        Lapras @ Leftovers  
+        Ability: Shell Armor  
+        EVs: 252 HP / 252 SpA / 4 SpD  
+        Modest Nature  
+        IVs: 0 Atk  
+        - Freeze-Dry  
+        - Surf  
+        - Thunderbolt  
+        - Toxic  
+
+        Armaldo @ Assault Vest  
+        Ability: Battle Armor  
+        EVs: 252 HP / 252 Atk / 4 SpD  
+        Adamant Nature  
+        - Earthquake  
+        - Knock Off  
+        - X-Scissor  
+        - Aqua Jet  
+
+        Drapion @ Life Orb  
+        Ability: Battle Armor  
+        EVs: 252 Atk / 4 SpD / 252 Spe  
+        Jolly Nature  
+        - Poison Jab  
+        - Knock Off  
+        - Earthquake  
+        - X-Scissor  
+
+        Kabutops @ Aguav Berry  
+        Ability: Battle Armor  
+        EVs: 252 Atk / 4 SpD / 252 Spe  
+        Jolly Nature  
+        - Liquidation  
+        - Leech Life  
+        - Knock Off  
+        - Swords Dance  
+
+        Falinks @ Iapapa Berry  
+        Ability: Battle Armor  
+        EVs: 252 HP / 252 Atk / 4 SpD  
+        Adamant Nature  
+        - Close Combat  
+        - Poison Jab  
+        - Iron Head  
+        - No Retreat  
+
+        """
+        OP_TEAM = """
+        Cloyster @ Assault Vest  
+        Ability: Shell Armor  
+        EVs: 248 HP / 252 Atk / 8 SpA  
+        Naughty Nature  
+        - Icicle Spear  
+        - Surf  
+        - Tri Attack  
+        - Poison Jab  
+
+        Omastar @ White Herb  
+        Ability: Shell Armor  
+        EVs: 252 SpA / 4 SpD / 252 Spe  
+        Modest Nature  
+        IVs: 0 Atk  
+        - Surf  
+        - Ancient Power  
+        - Earth Power  
+        - Shell Smash  
+
+        Crustle @ Leftovers  
+        Ability: Shell Armor  
+        EVs: 252 HP / 252 Atk / 4 SpD  
+        Adamant Nature  
+        - Earthquake  
+        - Knock Off  
+        - X-Scissor  
+        - Stealth Rock  
+
+        Escavalier @ Life Orb  
+        Ability: Shell Armor  
+        EVs: 248 HP / 252 Atk / 8 SpD  
+        Adamant Nature  
+        - Knock Off  
+        - Swords Dance  
+        - Iron Head  
+        - Poison Jab  
+
+        Drednaw @ Aguav Berry  
+        Ability: Shell Armor  
+        EVs: 248 HP / 252 Atk / 8 SpD  
+        Adamant Nature  
+        - Liquidation  
+        - Earthquake  
+        - Poison Jab  
+        - Swords Dance  
+
+        Type: Null @ Eviolite  
+        Ability: Battle Armor  
+        EVs: 252 HP / 252 Atk / 4 SpD  
+        Adamant Nature  
+        - Facade  
+        - Sleep Talk  
+        - Shadow Claw  
+        - Rest  
+
+        """
+        NAME_TO_ID_DICT = {
+        "turtonator": 0,
+        "lapras": 1,
+        "armaldo": 2,
+        "drapion": 3,
+        "kabutops": 4,
+        "falinks": 5,
+        "cloyster": 0,
+        "omastar": 1,
+        "crustle": 2,
+        "escavalier": 3,
+        "drednaw": 4,
+        "typenull": 5
+        }        
+
+    EPOCHS = args.epochs
+    NB_TRAINING_EPISODES = args.battles
+    NB_TRAINING_STEPS = NB_TRAINING_EPISODES*EPOCHS
+    NB_EVALUATION_EPISODES = int(NB_TRAINING_EPISODES/3)
+    N_STATE_COMPONENTS = 12
+    # num of features = num of state components + action
+    N_FEATURES = N_STATE_COMPONENTS + 1
+
+    N_OUR_MOVE_ACTIONS = 4
+    N_OUR_SWITCH_ACTIONS = 5
+    N_OUR_ACTIONS = N_OUR_MOVE_ACTIONS + N_OUR_SWITCH_ACTIONS
+
+    ALL_OUR_ACTIONS = np.array(range(0, N_OUR_ACTIONS))
+
+    if args.train:
+        env_player = DQL_RLPlayer(battle_format="gen8ou", team=OUR_TEAM, mode = "train")
+    else: env_player = DQL_RLPlayer(battle_format="gen8ou", team=OUR_TEAM, mode = "val")
 
     second_opponent = RandomPlayer(battle_format="gen8ou", team=OP_TEAM)
     opponent= MaxDamagePlayer(battle_format="gen8ou", team=OP_TEAM)
@@ -392,27 +562,33 @@ if __name__ == "__main__":
     # Output dimension
     n_action = len(env_player.action_space)
 
-    model = Sequential()
-    model.add(Dense(N_HIDDEN, activation="elu", input_shape=(1, N_STATE_COMPONENTS)))
+    if args.saved: 
+        modelfolder = args.model_folder
+        model = keras.models.load_model(modelfolder)
+    else: 
+        N_HIDDEN = args.hidden
+        model = Sequential()
+        model.add(Dense(N_HIDDEN, activation="elu", input_shape=(1, N_STATE_COMPONENTS)))
 
-    # Our embedding have shape (1, 12), which affects our hidden layer
-    # dimension and output dimension
-    # Flattening resolve potential issues that would arise otherwise
-    model.add(Flatten())
-    model.add(Dense(int(N_HIDDEN/2), activation="elu"))
-    model.add(Dense(n_action, activation="linear"))
+        # Our embedding have shape (1, 12), which affects our hidden layer
+        # dimension and output dimension
+        # Flattening resolve potential issues that would arise otherwise
+        model.add(Flatten())
+        model.add(Dense(int(N_HIDDEN/2), activation="elu"))
+        model.add(Dense(n_action, activation="linear"))
 
     memory = SequentialMemory(limit=NB_TRAINING_STEPS, window_length=1)
 
-    # epsilon greedy
-    policy = LinearAnnealedPolicy(
-        EpsGreedyQPolicy(),
-        attr="eps",
-        value_max=1.0,
-        value_min=0.05,
-        value_test=0,
-        nb_steps=NB_TRAINING_STEPS,
-    )
+    if args.policy == "lin_epsGreedy":
+        # linear annealing epsilon greedy https://github.com/keras-rl/keras-rl/blob/master/rl/policy.py
+        policy = LinearAnnealedPolicy(
+            EpsGreedyQPolicy(),
+            attr="eps",
+            value_max=1.0,
+            value_min=0.05,
+            value_test=0,
+            nb_steps=NB_TRAINING_STEPS,
+        )
 
     # Defining our DQN / https://github.com/keras-rl/keras-rl/blob/master/rl/agents/dqn.py
 
@@ -422,21 +598,23 @@ if __name__ == "__main__":
         policy=policy,
         memory=memory,
         nb_steps_warmup=int(NB_TRAINING_STEPS/10),
-        gamma=0.75,
+        gamma=args.gamma,
         target_model_update=1,
         delta_clip=0.01,
-        enable_double_dqn=True,
+        enable_double_dqn=args.enable_double_dqn,
     )
 
-    dqn.compile(Adam(lr=0.00025), metrics=["mae"])
+    dqn.compile(Adam(lr=args.adamlr), metrics=["mae"])
 
-    # Training
-    env_player.play_against(
-        env_algorithm=dqn_training,
-        opponent=opponent,
-        env_algorithm_kwargs={"dqn": dqn, "nb_steps": NB_TRAINING_STEPS},
-    )
-    model.save("model_%d" % NB_TRAINING_STEPS)
+    if args.train:
+        # Training
+        env_player.play_against(
+            env_algorithm=dqn_training,
+            opponent=opponent,
+            env_algorithm_kwargs={"dqn": dqn, "nb_steps": NB_TRAINING_STEPS},
+        )
+        model.save("model_%d" % NB_TRAINING_STEPS)
+
     env_player.mode = "val_max"
     # Evaluation
     print("Results against max player:")
