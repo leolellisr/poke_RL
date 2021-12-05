@@ -37,6 +37,268 @@ from itertools import product
 from scipy.interpolate import griddata
 import argparse
 
+OUR_TEAM = """ 
+Pikachu-Original (M) @ Light Ball  
+Ability: Static  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Adamant Nature  
+- Volt Tackle  
+- Nuzzle  
+- Iron Tail  
+- Knock Off  
+
+Charizard @ Life Orb  
+Ability: Solar Power  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Flamethrower  
+- Dragon Pulse  
+- Roost  
+- Sunny Day  
+
+Blastoise @ White Herb  
+Ability: Torrent  
+EVs: 4 Atk / 252 SpA / 252 Spe  
+Mild Nature  
+- Scald  
+- Ice Beam  
+- Earthquake  
+- Shell Smash  
+
+Venusaur @ Black Sludge  
+Ability: Chlorophyll  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Giga Drain  
+- Sludge Bomb  
+- Sleep Powder  
+- Leech Seed  
+
+Sirfetch’d @ Aguav Berry  
+Ability: Steadfast  
+EVs: 248 HP / 252 Atk / 8 SpD  
+Adamant Nature  
+- Close Combat  
+- Swords Dance  
+- Poison Jab  
+- Knock Off  
+
+Tauros (M) @ Assault Vest  
+Ability: Intimidate  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Adamant Nature  
+- Double-Edge  
+- Earthquake  
+- Megahorn  
+- Iron Head  
+"""
+
+OP_TEAM = """
+Eevee @ Eviolite  
+Ability: Adaptability  
+EVs: 252 HP / 252 Atk / 4 SpD  
+Jolly Nature  
+- Quick Attack  
+- Flail  
+- Facade  
+- Wish  
+
+Vaporeon @ Leftovers  
+Ability: Hydration  
+EVs: 252 HP / 252 Def / 4 SpA  
+Bold Nature  
+IVs: 0 Atk  
+- Scald  
+- Shadow Ball  
+- Toxic  
+- Wish  
+
+Sylveon @ Aguav Berry  
+Ability: Pixilate  
+EVs: 252 HP / 252 SpA / 4 SpD  
+Modest Nature  
+IVs: 0 Atk  
+- Hyper Voice  
+- Mystical Fire  
+- Psyshock  
+- Calm Mind  
+
+Jolteon @ Assault Vest  
+Ability: Quick Feet  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Thunderbolt  
+- Hyper Voice  
+- Volt Switch  
+- Shadow Ball  
+
+Leafeon @ Life Orb  
+Ability: Chlorophyll  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Leaf Blade  
+- Knock Off  
+- X-Scissor  
+- Swords Dance  
+
+Umbreon @ Iapapa Berry  
+Ability: Inner Focus  
+EVs: 252 HP / 4 Atk / 252 SpD  
+Careful Nature  
+- Foul Play  
+- Body Slam  
+- Toxic  
+- Wish  
+"""
+
+NAME_TO_ID_DICT = {
+    "pikachuoriginal": 0,
+    "charizard": 1,
+    "blastoise": 2,
+    "venusaur": 3,
+    "sirfetchd": 4,
+    "tauros": 5,
+    "eevee": 0,
+    "vaporeon": 1,
+    "sylveon": 2,
+    "jolteon": 3,
+    "leafeon": 4,
+    "umbreon": 5
+}  
+
+OUR_TEAM_DET = """
+Turtonator @ White Herb  
+Ability: Shell Armor  
+EVs: 4 Atk / 252 SpA / 252 Spe  
+Rash Nature  
+- Flamethrower  
+- Dragon Pulse  
+- Earthquake  
+- Shell Smash  
+
+Lapras @ Leftovers  
+Ability: Shell Armor  
+EVs: 252 HP / 252 SpA / 4 SpD  
+Modest Nature  
+IVs: 0 Atk  
+- Freeze-Dry  
+- Surf  
+- Thunderbolt  
+- Toxic  
+
+Armaldo @ Assault Vest  
+Ability: Battle Armor  
+EVs: 252 HP / 252 Atk / 4 SpD  
+Adamant Nature  
+- Earthquake  
+- Knock Off  
+- X-Scissor  
+- Aqua Jet  
+
+Drapion @ Life Orb  
+Ability: Battle Armor  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Poison Jab  
+- Knock Off  
+- Earthquake  
+- X-Scissor  
+
+Kabutops @ Aguav Berry  
+Ability: Battle Armor  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Liquidation  
+- Leech Life  
+- Knock Off  
+- Swords Dance  
+
+Falinks @ Iapapa Berry  
+Ability: Battle Armor  
+EVs: 252 HP / 252 Atk / 4 SpD  
+Adamant Nature  
+- Close Combat  
+- Poison Jab  
+- Iron Head  
+- No Retreat  
+
+"""
+OP_TEAM_DET = """
+Cloyster @ Assault Vest  
+Ability: Shell Armor  
+EVs: 248 HP / 252 Atk / 8 SpA  
+Naughty Nature  
+- Icicle Spear  
+- Surf  
+- Tri Attack  
+- Poison Jab  
+
+Omastar @ White Herb  
+Ability: Shell Armor  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Surf  
+- Ancient Power  
+- Earth Power  
+- Shell Smash  
+
+Crustle @ Leftovers  
+Ability: Shell Armor  
+EVs: 252 HP / 252 Atk / 4 SpD  
+Adamant Nature  
+- Earthquake  
+- Knock Off  
+- X-Scissor  
+- Stealth Rock  
+
+Escavalier @ Life Orb  
+Ability: Shell Armor  
+EVs: 248 HP / 252 Atk / 8 SpD  
+Adamant Nature  
+- Knock Off  
+- Swords Dance  
+- Iron Head  
+- Poison Jab  
+
+Drednaw @ Aguav Berry  
+Ability: Shell Armor  
+EVs: 248 HP / 252 Atk / 8 SpD  
+Adamant Nature  
+- Liquidation  
+- Earthquake  
+- Poison Jab  
+- Swords Dance  
+
+Type: Null @ Eviolite  
+Ability: Battle Armor  
+EVs: 252 HP / 252 Atk / 4 SpD  
+Adamant Nature  
+- Facade  
+- Sleep Talk  
+- Shadow Claw  
+- Rest  
+
+"""
+
+NAME_TO_ID_DICT_DET = {
+"turtonator": 0,
+"lapras": 1,
+"armaldo": 2,
+"drapion": 3,
+"kabutops": 4,
+"falinks": 5,
+"cloyster": 0,
+"omastar": 1,
+"crustle": 2,
+"escavalier": 3,
+"drednaw": 4,
+"typenull": 5
+}                
+
 def parse_args():
     # fmt: off
     parser = argparse.ArgumentParser()
@@ -274,269 +536,7 @@ if __name__ == "__main__":
                         api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI1NjY1YmJkZi1hYmM5LTQ3M2QtOGU1ZC1iZTFlNWY4NjE1NDQifQ==',
                         tags=["DeepRL", args.exp_name, args.env, str(args.epochs)+"epochs"])
 
-    if args.env == "stochastic":
-        # our team
-        OUR_TEAM = """ 
-        Pikachu-Original (M) @ Light Ball  
-        Ability: Static  
-        EVs: 252 Atk / 4 SpD / 252 Spe  
-        Adamant Nature  
-        - Volt Tackle  
-        - Nuzzle  
-        - Iron Tail  
-        - Knock Off  
-
-        Charizard @ Life Orb  
-        Ability: Solar Power  
-        EVs: 252 SpA / 4 SpD / 252 Spe  
-        Timid Nature  
-        IVs: 0 Atk  
-        - Flamethrower  
-        - Dragon Pulse  
-        - Roost  
-        - Sunny Day  
-
-        Blastoise @ White Herb  
-        Ability: Torrent  
-        EVs: 4 Atk / 252 SpA / 252 Spe  
-        Mild Nature  
-        - Scald  
-        - Ice Beam  
-        - Earthquake  
-        - Shell Smash  
-
-        Venusaur @ Black Sludge  
-        Ability: Chlorophyll  
-        EVs: 252 SpA / 4 SpD / 252 Spe  
-        Modest Nature  
-        IVs: 0 Atk  
-        - Giga Drain  
-        - Sludge Bomb  
-        - Sleep Powder  
-        - Leech Seed  
-
-        Sirfetch’d @ Aguav Berry  
-        Ability: Steadfast  
-        EVs: 248 HP / 252 Atk / 8 SpD  
-        Adamant Nature  
-        - Close Combat  
-        - Swords Dance  
-        - Poison Jab  
-        - Knock Off  
-
-        Tauros (M) @ Assault Vest  
-        Ability: Intimidate  
-        EVs: 252 Atk / 4 SpD / 252 Spe  
-        Adamant Nature  
-        - Double-Edge  
-        - Earthquake  
-        - Megahorn  
-        - Iron Head  
-        """
-
-        OP_TEAM = """
-        Eevee @ Eviolite  
-        Ability: Adaptability  
-        EVs: 252 HP / 252 Atk / 4 SpD  
-        Jolly Nature  
-        - Quick Attack  
-        - Flail  
-        - Facade  
-        - Wish  
-
-        Vaporeon @ Leftovers  
-        Ability: Hydration  
-        EVs: 252 HP / 252 Def / 4 SpA  
-        Bold Nature  
-        IVs: 0 Atk  
-        - Scald  
-        - Shadow Ball  
-        - Toxic  
-        - Wish  
-
-        Sylveon @ Aguav Berry  
-        Ability: Pixilate  
-        EVs: 252 HP / 252 SpA / 4 SpD  
-        Modest Nature  
-        IVs: 0 Atk  
-        - Hyper Voice  
-        - Mystical Fire  
-        - Psyshock  
-        - Calm Mind  
-
-        Jolteon @ Assault Vest  
-        Ability: Quick Feet  
-        EVs: 252 SpA / 4 SpD / 252 Spe  
-        Timid Nature  
-        IVs: 0 Atk  
-        - Thunderbolt  
-        - Hyper Voice  
-        - Volt Switch  
-        - Shadow Ball  
-
-        Leafeon @ Life Orb  
-        Ability: Chlorophyll  
-        EVs: 252 Atk / 4 SpD / 252 Spe  
-        Jolly Nature  
-        - Leaf Blade  
-        - Knock Off  
-        - X-Scissor  
-        - Swords Dance  
-
-        Umbreon @ Iapapa Berry  
-        Ability: Inner Focus  
-        EVs: 252 HP / 4 Atk / 252 SpD  
-        Careful Nature  
-        - Foul Play  
-        - Body Slam  
-        - Toxic  
-        - Wish  
-        """
-
-        NAME_TO_ID_DICT = {
-            "pikachuoriginal": 0,
-            "charizard": 1,
-            "blastoise": 2,
-            "venusaur": 3,
-            "sirfetchd": 4,
-            "tauros": 5,
-            "eevee": 0,
-            "vaporeon": 1,
-            "sylveon": 2,
-            "jolteon": 3,
-            "leafeon": 4,
-            "umbreon": 5
-        }  
-
-    else:
-        OUR_TEAM = """
-        Turtonator @ White Herb  
-        Ability: Shell Armor  
-        EVs: 4 Atk / 252 SpA / 252 Spe  
-        Rash Nature  
-        - Flamethrower  
-        - Dragon Pulse  
-        - Earthquake  
-        - Shell Smash  
-
-        Lapras @ Leftovers  
-        Ability: Shell Armor  
-        EVs: 252 HP / 252 SpA / 4 SpD  
-        Modest Nature  
-        IVs: 0 Atk  
-        - Freeze-Dry  
-        - Surf  
-        - Thunderbolt  
-        - Toxic  
-
-        Armaldo @ Assault Vest  
-        Ability: Battle Armor  
-        EVs: 252 HP / 252 Atk / 4 SpD  
-        Adamant Nature  
-        - Earthquake  
-        - Knock Off  
-        - X-Scissor  
-        - Aqua Jet  
-
-        Drapion @ Life Orb  
-        Ability: Battle Armor  
-        EVs: 252 Atk / 4 SpD / 252 Spe  
-        Jolly Nature  
-        - Poison Jab  
-        - Knock Off  
-        - Earthquake  
-        - X-Scissor  
-
-        Kabutops @ Aguav Berry  
-        Ability: Battle Armor  
-        EVs: 252 Atk / 4 SpD / 252 Spe  
-        Jolly Nature  
-        - Liquidation  
-        - Leech Life  
-        - Knock Off  
-        - Swords Dance  
-
-        Falinks @ Iapapa Berry  
-        Ability: Battle Armor  
-        EVs: 252 HP / 252 Atk / 4 SpD  
-        Adamant Nature  
-        - Close Combat  
-        - Poison Jab  
-        - Iron Head  
-        - No Retreat  
-
-        """
-        OP_TEAM = """
-        Cloyster @ Assault Vest  
-        Ability: Shell Armor  
-        EVs: 248 HP / 252 Atk / 8 SpA  
-        Naughty Nature  
-        - Icicle Spear  
-        - Surf  
-        - Tri Attack  
-        - Poison Jab  
-
-        Omastar @ White Herb  
-        Ability: Shell Armor  
-        EVs: 252 SpA / 4 SpD / 252 Spe  
-        Modest Nature  
-        IVs: 0 Atk  
-        - Surf  
-        - Ancient Power  
-        - Earth Power  
-        - Shell Smash  
-
-        Crustle @ Leftovers  
-        Ability: Shell Armor  
-        EVs: 252 HP / 252 Atk / 4 SpD  
-        Adamant Nature  
-        - Earthquake  
-        - Knock Off  
-        - X-Scissor  
-        - Stealth Rock  
-
-        Escavalier @ Life Orb  
-        Ability: Shell Armor  
-        EVs: 248 HP / 252 Atk / 8 SpD  
-        Adamant Nature  
-        - Knock Off  
-        - Swords Dance  
-        - Iron Head  
-        - Poison Jab  
-
-        Drednaw @ Aguav Berry  
-        Ability: Shell Armor  
-        EVs: 248 HP / 252 Atk / 8 SpD  
-        Adamant Nature  
-        - Liquidation  
-        - Earthquake  
-        - Poison Jab  
-        - Swords Dance  
-
-        Type: Null @ Eviolite  
-        Ability: Battle Armor  
-        EVs: 252 HP / 252 Atk / 4 SpD  
-        Adamant Nature  
-        - Facade  
-        - Sleep Talk  
-        - Shadow Claw  
-        - Rest  
-
-        """
-        NAME_TO_ID_DICT = {
-        "turtonator": 0,
-        "lapras": 1,
-        "armaldo": 2,
-        "drapion": 3,
-        "kabutops": 4,
-        "falinks": 5,
-        "cloyster": 0,
-        "omastar": 1,
-        "crustle": 2,
-        "escavalier": 3,
-        "drednaw": 4,
-        "typenull": 5
-        }        
+    
 
     EPOCHS = args.epochs
     NB_TRAINING_EPISODES = args.battles
