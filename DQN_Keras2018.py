@@ -22,7 +22,7 @@ from rl.memory import SequentialMemory
 from tensorflow.keras.layers import Dense, Flatten
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.optimizers import Adam
-
+from distutils.util import strtobool
 import neptune.new as neptune
 import nest_asyncio
 
@@ -564,7 +564,7 @@ if __name__ == "__main__":
 
     if args.saved: 
         modelfolder = args.model_folder
-        model = keras.models.load_model(modelfolder)
+        model = tf.keras.models.load_model(modelfolder)
     else: 
         N_HIDDEN = args.hidden
         model = Sequential()
