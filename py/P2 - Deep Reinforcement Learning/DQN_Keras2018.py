@@ -1,6 +1,6 @@
 ## Stochastic
 ##
-## ddpg Keras 2018: https://github.com/keras-rl/keras-rl/blob/master/rl/agents/ddpg.py
+## DQN Keras 2018: https://github.com/keras-rl/keras-rl/blob/master/rl/agents/dqn.py
 ##
 ## gamma = 0.75
 ##
@@ -8,7 +8,7 @@
 ##
 
 import numpy as np
-#import tensorflow as tf
+import tensorflow as tf
 import asyncio
 
 from poke_env.player.env_player import Gen8EnvSinglePlayer
@@ -16,10 +16,14 @@ from poke_env.player.random_player import RandomPlayer
 from poke_env.environment.abstract_battle import AbstractBattle
 from poke_env.player.battle_order import ForfeitBattleOrder
 
-from stable_baselines.deepq.policies import MlpPolicy
-from stable_baselines import PPO2
-from gym.spaces import Box, Discrete
+from rl.agents.dqn import DQNAgent
+from rl.policy import LinearAnnealedPolicy, EpsGreedyQPolicy
+from rl.memory import SequentialMemory
 
+#import keras
+from tensorflow.keras.layers import Dense, Flatten
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.optimizers import Adam
 from distutils.util import strtobool
 import neptune.new as neptune
 #import nest_asyncio
@@ -34,7 +38,6 @@ from datetime import date
 from itertools import product
 from scipy.interpolate import griddata
 import argparse
-import matplotlib.pyplot as plt
 
 OUR_TEAM_STO = """ 
 Pikachu-Original (M) @ Light Ball  
@@ -298,8 +301,6 @@ NAME_TO_ID_DICT = {
 "typenull": 5
 }                
 
-rewards_a =[]
-win_a = []
 def parse_args():
     # fmt: off
     parser = argparse.ArgumentParser()
@@ -324,7 +325,9 @@ def parse_args():
     parser.add_argument('--hidden', type=int, default=128,
         help="Hidden layers applied on our nn") 
     parser.add_argument('--gamma', type=float, default=0.75,
-        help="gamma value used on ddpg") 
+        help="gamma value used on DQN") 
+    parser.add_argument('--enable-double-dqn', type=lambda x:bool(strtobool(x)), default=True, nargs='?', const=True,
+        help='enable doubleDQN')
     parser.add_argument('--adamlr', type=float, default=0.00025,
         help="learning rate used on Adam")    
 
@@ -340,20 +343,14 @@ def parse_args():
 #nest_asyncio.apply()
 np.random.seed(0)
 
-class PPO_RLPlayer(Gen8EnvSinglePlayer):
+class DQL_RLPlayer(Gen8EnvSinglePlayer):
     def __init__(self, battle_format, team, mode):
             super().__init__(battle_format=battle_format, team=team)
             self.mode = mode 
             self.num_battles = 0
             #self.num_battles_avg = 0
             #self.n_won_battles_avg = self.n_won_battles
-            #self._ACTION_SPACE = list(range(4 + 5))
-            self.observation_space = Box(low=-10, high=10, shape=(12,))
-            self._ACTION_SPACE = Discrete(9)
-
-    def getThisPlayer(self):
-        return self
-
+            self._ACTION_SPACE = list(range(4 + 5))
     def embed_battle(self, battle):
         # -1 indicates that the move does not have a base power
         # or is not available
@@ -478,7 +475,6 @@ class PPO_RLPlayer(Gen8EnvSinglePlayer):
         if args.neptune:
             run[f'{self.mode} reward_buffer'].log(current_value)
         #    run[f'{self.mode} accum. reward_buffer'].log(sum(self._reward_buffer.values()))
-        else: rewards_a.append(current_value)
         return to_return
 
     # Calling reward_computing_helper
@@ -491,7 +487,7 @@ class PPO_RLPlayer(Gen8EnvSinglePlayer):
         if args.neptune:
             run[f'{self.mode} win_acc'].log(self.n_won_battles / self.num_battles)
         #    run[f'{self.mode} win_acc avg'].log(self.n_won_battles_avg / self.num_battles_avg)
-        else: win_a.append(self.n_won_battles / self.num_battles)
+
         #if self.num_battles%100==0:
         #    self.num_battles_avg = 0
         #    self.n_won_battles_avg = 0
@@ -514,6 +510,23 @@ class MaxDamagePlayer(RandomPlayer):
 
 #tf.random.set_seed(0)
 #np.random.seed(0)
+
+
+# This is the function that will be used to train the dqn
+def dqn_training(player, dqn, nb_steps):
+    dqn.fit(player, nb_steps=nb_steps, verbose=0)
+    player.complete_current_battle()
+
+
+def dqn_evaluation(player, dqn, nb_episodes):
+    # Reset battle statistics
+    player.reset_battles()
+    dqn.test(player, nb_episodes=nb_episodes, visualize=False, verbose=False)
+
+    print(
+        "DQN Evaluation: %d victories out of %d episodes"
+        % (player.n_won_battles, nb_episodes)
+    )
 
 
 if __name__ == "__main__":
@@ -542,75 +555,85 @@ if __name__ == "__main__":
     ALL_OUR_ACTIONS = np.array(range(0, N_OUR_ACTIONS))
 
     if args.train:
-        env_player = PPO_RLPlayer(battle_format="gen8ou", team=OUR_TEAM, mode = "train")
-    else: env_player = PPO_RLPlayer(battle_format="gen8ou", team=OUR_TEAM, mode = "val")
+        env_player = DQL_RLPlayer(battle_format="gen8ou", team=OUR_TEAM, mode = "train")
+    else: env_player = DQL_RLPlayer(battle_format="gen8ou", team=OUR_TEAM, mode = "val")
 
     second_opponent = RandomPlayer(battle_format="gen8ou", team=OP_TEAM)
     opponent= MaxDamagePlayer(battle_format="gen8ou", team=OP_TEAM)
 
+    # Output dimension
+    n_action = len(env_player.action_space)
 
     if args.saved: 
         modelfolder = args.model_folder
-        #model = tf.keras.models.load_model(modelfolder)
+        model = tf.keras.models.load_model(modelfolder)
     else: 
-        model = PPO2("MlpPolicy", env_player, gamma=args.gamma, verbose=0)
+        N_HIDDEN = args.hidden
+        model = Sequential()
+        model.add(Dense(N_HIDDEN, activation="elu", input_shape=(1, N_STATE_COMPONENTS)))
 
-    def ppo_training(player):
+        # Our embedding have shape (1, 12), which affects our hidden layer
+        # dimension and output dimension
+        # Flattening resolve potential issues that would arise otherwise
+        model.add(Flatten())
+        model.add(Dense(int(N_HIDDEN/2), activation="elu"))
+        model.add(Dense(n_action, activation="linear"))
 
-        print ("Training...")
-        model.learn(total_timesteps=NB_TRAINING_STEPS)
-        print("Training complete.")
+    memory = SequentialMemory(limit=NB_TRAINING_STEPS, window_length=1)
 
-
-    def ppo_evaluating(player):
-        player.reset_battles()
-        for _ in range(NB_EVALUATION_EPISODES):
-            done = False
-            obs = player.reset()
-            while not done:
-                action = model.predict(obs)[0]
-                obs, _, done, _ = player.step(action)
-                # print ("done:" + str(done))
-        player.complete_current_battle()
-
-        print(
-            "DQN Evaluation: %d victories out of %d episodes"
-            % (player.n_won_battles, NB_EVALUATION_EPISODES)
+    if args.policy == "lin_epsGreedy":
+        # linear annealing epsilon greedy https://github.com/keras-rl/keras-rl/blob/master/rl/policy.py
+        policy = LinearAnnealedPolicy(
+            EpsGreedyQPolicy(),
+            attr="eps",
+            value_max=1.0,
+            value_min=0.05,
+            value_test=0,
+            nb_steps=NB_TRAINING_STEPS,
         )
+
+    # Defining our DQN / https://github.com/keras-rl/keras-rl/blob/master/rl/agents/dqn.py
+
+    dqn = DQNAgent(
+        model=model,
+        nb_actions=len(env_player.action_space),
+        policy=policy,
+        memory=memory,
+        nb_steps_warmup=int(NB_TRAINING_STEPS/10),
+        gamma=args.gamma,
+        target_model_update=1,
+        delta_clip=0.01,
+        enable_double_dqn=args.enable_double_dqn
+    )
+
+    dqn.compile(Adam(lr=args.adamlr), metrics=["mae"])
 
     if args.train:
         # Training
         env_player.play_against(
-            env_algorithm=ppo_training,
-            opponent=opponent
+            env_algorithm=dqn_training,
+            opponent=opponent,
+            env_algorithm_kwargs={"dqn": dqn, "nb_steps": NB_TRAINING_STEPS},
         )
         model.save("model_%d" % NB_TRAINING_STEPS)
-
-    if not args.neptune:
-        plt.figure(figsize=(25,20))
-
-        #fig, axes = plt.subplots(6, 3, figsize=(30, 30))
-        fig, ax1 = plt.subplots(figsize=(25, 20))
-        ax1.plot(rewards_a, 'b:') #color=color
-        plt.savefig('rewards.pdf')  
-
-        fig, ax1 = plt.subplots(figsize=(25, 20))
-        ax1.plot(win_a, 'r') #color=color
-        plt.savefig('win.pdf')  
 
     env_player.mode = "val_max"
     # Evaluation
     print("Results against max player:")
     env_player.num_battles=0
     env_player.play_against(
-        env_algorithm=ppo_evaluating,
-        opponent=opponent)
+        env_algorithm=dqn_evaluation,
+        opponent=opponent,
+        env_algorithm_kwargs={"dqn": dqn, "nb_episodes": NB_EVALUATION_EPISODES},
+    )
     env_player.mode = "val_rand"
     print("\nResults against random player:")
     env_player.num_battles=0
     env_player.play_against(
-        env_algorithm=ppo_evaluating,
-        opponent=second_opponent)
+        env_algorithm=dqn_evaluation,
+        opponent=second_opponent,
+        env_algorithm_kwargs={"dqn": dqn, "nb_episodes": NB_EVALUATION_EPISODES},
+    )
 
 
 
