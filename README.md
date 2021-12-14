@@ -1,20 +1,26 @@
-Code repository with classical reinforcement learning methods using [poke_env environment](poke-env.readthedocs.io/en/latest/).
+Code repository with classical reinforcement learning and deep reinforcement learning methods using [poke_env environment](poke-env.readthedocs.io/en/latest/).
 
 It is necessary to install the requirements available at [requirements_poke_env.yml](https://github.com/leolellisr/poke_RL/blob/master/requirements_poke_env.yml).
+To use PPO, it is necessary to install the requirements available at [requirements_poke_env_ppo.yml](https://github.com/leolellisr/poke_RL/blob/master/requirements_poke_env_ppo.yml).
 
 For training, it is necessary to run [Pokémon Showdown](https://play.pokemonshowdown.com) on localhost. Showdown is [open-source](https://github.com/smogon/pokemon-showdown.git).
 
-[Presentation video](https://youtu.be/uSZE9gnheSI)
+[Presentation video - Project 1 - Tabular Methods and Function Approximation](https://youtu.be/uSZE9gnheSI)
+
+[Presentation video - Project 2 - Deep Reinforcement Learning](https://youtu.be/rEVboOny7rY)
 
 Graphics available at:
-* [Graphs MC Control, MC Control FA, Q-Learning, Q-Learning FA, SARSA($\lambda$) Deterministic and SARSA($\lambda$) FA](https://app.neptune.ai/leolellisr/rl-pokeenv)
+* [Graphs MC Control, MC Control FA, Q-Learning, Q-Learning FA, SARSA($\lambda$) Deterministic, SARSA($\lambda$) FA, DQN and Double-DQN](https://app.neptune.ai/leolellisr/rl-pokeenv)
 * [Graphs SARSA($\lambda$) Stochastic](https://app.neptune.ai/mauricioplopes/poke-env)
+* [Graphs PPO](https://github.com/leolellisr/poke_RL/tree/master/images/report/ppo_results)
 
-Notebooks of implemented methods available [here](https://github.com/leolellisr/poke_RL/tree/master/notebooks)
+Notebooks of implemented Tabular Methods and Function Approximation Methods available [here](https://github.com/leolellisr/poke_RL/tree/master/notebooks)
 
-Equivalent python files of implemented methods available [here](https://github.com/leolellisr/poke_RL/tree/master/py)
+Python files of implemented methods available [here](https://github.com/leolellisr/poke_RL/tree/master/py)
 
 json files of trained tabular methods available [here](https://drive.google.com/drive/folders/1GwNQSsOR0PPtPKlbIy9NzWvTnTtMOD8_?usp=sharing)
+
+Trained models of deep reinforcement learning methods available [here](https://drive.google.com/drive/folders/17_Gn1RWOCh-ekiRhhj40ehPz9nv_d-Fy?usp=sharing)
 
 ## Goal and Motivation
 
@@ -210,7 +216,7 @@ To adapt our environment to a deterministic setup, we had to establish the follo
   * +15 if we won the battle;
   * -15 if we lost the battle.
 
-# Methods implemented
+# Tabular Methods and Function Approximation implemented
 * Monte Carlo Control First-Visit;
 * Function Approximation with Monte Carlo Control First-Visit;
 * Q-Learning;
@@ -218,11 +224,21 @@ To adapt our environment to a deterministic setup, we had to establish the follo
 * SARSA($\lambda$)
 * Function Approximation with SARSA($\lambda$)
 
+
+# Deep Reinforcement Learning Methods implemented
+* [DQN - Keras 2018](https://notebooks.githubusercontent.com/view/github.com/keras-rl/keras-rl/blob/master/rl/agents/dqn.py)
+* [Double-DQN - Keras 2018](https://notebooks.githubusercontent.com/view/github.com/keras-rl/keras-rl/blob/master/rl/agents/dqn.py)
+* [PPO - Stable Baselines 2021](https://notebooks.githubusercontent.com/view/github.com/Stable-Baselines-Team/stable-baselines/blob/master/stable_baselines/ppo2/ppo2.py)
+
 # Comparisons
 
-One table with performance comparisons in Validation between our methods and some methods proposed in literature are showed in [this figure](https://imgur.com/vwUOnDZ).
+One table with performance comparisons in Validation between our Tabular Methods and Function Approximation implemented and some methods proposed in literature are showed in [this figure](https://imgur.com/vwUOnDZ).
 
-The method with the best performance against both Players (MaxDamagePlayer and RandomPlayer) was Q-Learning Function Approximation in the Stochastic environment.
+One table with performance comparisons in Validation between our Deep Reinforcement Learning methods implemented, our best performance method from P1 and one method proposed in literature are showed in [this figure](https://imgur.com/wwvFnRZ).
+
+The Function Approximation method with the best performance against both Players (MaxDamagePlayer and RandomPlayer) was Q-Learning Function Approximation in the Stochastic environment.
+
+The Deep-RL method with the best performance in the Stochastic environment against both Players (MaxDamagePlayer and RandomPlayer) was Proximal Policy Optimization (PPO2) - Stable Baselines (2021) trained by 300k steps. In the Deterministic environment, against both Players (MaxDamagePlayer and RandomPlayer),  the best performance was Proximal Policy Optimization (PPO2) - Stable Baselines (2021) trained by 900k steps.
 
 # Limitations
 
@@ -231,3 +247,6 @@ The only limitations of our project are in the use of the **deterministic** envi
 - Moves with 100% accuracy and no side effects likely to occur.
 
 Our **stochastic** solutions can be applied to any case and with any team formation.
+
+We also found some libraries limitations in the use of PPO2, from Stable Baselines (2021). The requirements listed [here](https://github.com/leolellisr/poke_RL/blob/master/requirements_poke_env_ppo.yml) must be used. Neptune cannot be used.
+
