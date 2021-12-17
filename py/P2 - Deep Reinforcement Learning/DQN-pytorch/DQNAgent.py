@@ -28,7 +28,7 @@ class Agent():
         Local and Targat State-Action Policy Networks
         Replay Memory Buffer from Replay Buffer Class (define below)
     """
-    def __init__(self, state_size, action_size, dqn_type='DQN', replay_memory_size=1e5, batch_size=64, gamma=0.99,
+    def __init__(self, state_size, action_size, dqn_type='DQN', replay_memory_size=1e5, batch_size=32, gamma=0.99,
     	learning_rate=1e-3, target_tau=2e-3, update_rate=4, seed=0):
         
         """

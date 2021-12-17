@@ -320,7 +320,9 @@ def parse_args():
 
     # Training parameters
     parser.add_argument('--epochs', type=int, default=30,
-        help="n epochs")    
+        help="n epochs")
+    parser.add_argument('--batch_size', type=int, default=32,
+        help="batch size")   
     parser.add_argument('--battles', type=int, default=10000,
         help="n steps per epoch")
     
@@ -342,9 +344,9 @@ class DQN_RLPlayer(Gen8EnvSinglePlayer):
             self.num_battles = 0
             self._ACTION_SPACE = list(range(4 + 5))
 
-            self.epsilon=1.0
+            self.epsilon=0.8
             self.epsilon_min=0.05
-            self.epsilon_decay=0.99
+            self.epsilon_decay=0.95
 
     def choose_move(self, battle):
         if self.state is not None:
@@ -356,8 +358,10 @@ class DQN_RLPlayer(Gen8EnvSinglePlayer):
             next_state = self.embed_battle(battle)
 
             #Update model
-            self.rewards.append(torch.from_numpy(np.array(self.reward)))
-            self.agent.step(self.state, self.action, self.reward, next_state, done = False)
+            self.agent.memory.add(self.state, self.action, self.reward, next_state, False)
+            if len(self.agent.memory) > args.batch_size:
+                experiences = self.agent.memory.sample()
+                self.agent.learn(experiences, args.gamma)
             
             # S <- S'
             self.state = next_state
@@ -469,9 +473,10 @@ class DQN_RLPlayer(Gen8EnvSinglePlayer):
         if args.neptune:
             run[f'{"train"} win_acc'].log(self.n_won_battles / self.num_battles)
 
-        #self._observations[battle].put(self.embed_battle(battle))
         self.epsilon = max(self.epsilon_min, self.epsilon_decay*self.epsilon)
-        self.agent.step(self.state, self.action, self.reward, self.state, done = True)
+        if len(self.agent.memory) > args.batch_size:
+                experiences = self.agent.memory.sample()
+                self.agent.learn(experiences, args.gamma)
 
 
 class ValidationPlayer(Gen8EnvSinglePlayer):
@@ -483,7 +488,7 @@ class ValidationPlayer(Gen8EnvSinglePlayer):
         self.action = None
         self.num_battles = 0
 
-        self.epsilon=1.0
+        self.epsilon=0.00
 
     def choose_move(self, battle):
         if self.state is not None:
@@ -616,7 +621,7 @@ if __name__ == "__main__":
     if args.neptune:
         run = neptune.init(project='leolellisr/rl-pokeenv',
                         api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI1NjY1YmJkZi1hYmM5LTQ3M2QtOGU1ZC1iZTFlNWY4NjE1NDQifQ==',
-                        tags=["DQN-torch", args.exp_name, args.env, str(args.epochs)+"episodes"])
+                        tags=["DQNimp-torch", args.exp_name, args.env, str(args.epochs)+"episodes"])
 
     
     # environment: stochastic or deterministic
@@ -646,7 +651,7 @@ if __name__ == "__main__":
     # training
     async def do_battle_training():
         # DQN agent
-        agent = Agent(state_size=N_STATE_COMPONENTS, action_size=N_OUR_ACTIONS, dqn_type='DQN', replay_memory_size = 1e4,
+        agent = Agent(state_size=N_STATE_COMPONENTS, action_size=N_OUR_ACTIONS, dqn_type='DQN', replay_memory_size = 1e5, batch_size = args.batch_size,
             gamma = args.gamma, learning_rate = args.adamlr)
         # our player
         player = DQN_RLPlayer(battle_format="gen8ou", team=OUR_TEAM, agent=agent)
