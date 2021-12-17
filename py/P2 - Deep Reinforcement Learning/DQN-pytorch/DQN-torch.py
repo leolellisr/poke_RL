@@ -471,7 +471,7 @@ class DQN_RLPlayer(Gen8EnvSinglePlayer):
             run[f'{"train"} win_acc'].log(self.n_won_battles / self.num_battles)
 
         self.epsilon = max(self.epsilon_min, self.epsilon_decay*self.epsilon)
-        self.agent.step(self.state, self.action, self.reward, next_state, False)
+        self.agent.step(self.state, self.action, self.reward, self.state, False)
 
 class ValidationPlayer(Gen8EnvSinglePlayer):
     def __init__(self, battle_format, team, agent, env_player_mode):
