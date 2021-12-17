@@ -311,7 +311,7 @@ def parse_args():
         help='applied policy')            
     parser.add_argument('--hidden', type=int, default=128,
         help="Hidden layers applied on our nn") 
-    parser.add_argument('--gamma', type=float, default=0.75,
+    parser.add_argument('--gamma', type=float, default=0.99,
         help="gamma value used on DQN") 
     parser.add_argument('--enable-double-dqn', type=lambda x:bool(strtobool(x)), default=True, nargs='?', const=True,
         help='enable doubleDQN')
@@ -358,10 +358,7 @@ class DQN_RLPlayer(Gen8EnvSinglePlayer):
             next_state = self.embed_battle(battle)
 
             #Update model
-            self.agent.memory.add(self.state, self.action, self.reward, next_state, False)
-            if len(self.agent.memory) > args.batch_size:
-                experiences = self.agent.memory.sample()
-                self.agent.learn(experiences, args.gamma)
+            self.agent.step(self.state, self.action, self.reward, next_state, False)
             
             # S <- S'
             self.state = next_state
@@ -474,10 +471,7 @@ class DQN_RLPlayer(Gen8EnvSinglePlayer):
             run[f'{"train"} win_acc'].log(self.n_won_battles / self.num_battles)
 
         self.epsilon = max(self.epsilon_min, self.epsilon_decay*self.epsilon)
-        if len(self.agent.memory) > args.batch_size:
-                experiences = self.agent.memory.sample()
-                self.agent.learn(experiences, args.gamma)
-
+        self.agent.step(self.state, self.action, self.reward, next_state, False)
 
 class ValidationPlayer(Gen8EnvSinglePlayer):
     def __init__(self, battle_format, team, agent, env_player_mode):
@@ -493,7 +487,7 @@ class ValidationPlayer(Gen8EnvSinglePlayer):
     def choose_move(self, battle):
         if self.state is not None:
             #Action
-            self.action = self.agent.act(self.state, self.epsilon)
+            self.action = self.agent.act(self.state)
             #Next State
             next_state = self.embed_battle(battle)
             # S <- S'
@@ -501,7 +495,7 @@ class ValidationPlayer(Gen8EnvSinglePlayer):
         else:
             # S first initialization
             self.state = self.embed_battle(battle)
-            self.action = self.agent.act(self.state, self.epsilon)
+            self.action = self.agent.act(self.state)
 
         # if the selected action is not possible, perform a random move instead
         if self.action == -1:
@@ -651,7 +645,7 @@ if __name__ == "__main__":
     # training
     async def do_battle_training():
         # DQN agent
-        agent = Agent(state_size=N_STATE_COMPONENTS, action_size=N_OUR_ACTIONS, dqn_type='DQN', replay_memory_size = 1e5, batch_size = args.batch_size,
+        agent = Agent(state_size=N_STATE_COMPONENTS, action_size=N_OUR_ACTIONS, dqn_type='DQN', replay_memory_size = 4e5, batch_size = args.batch_size,
             gamma = args.gamma, learning_rate = args.adamlr)
         # our player
         player = DQN_RLPlayer(battle_format="gen8ou", team=OUR_TEAM, agent=agent)
