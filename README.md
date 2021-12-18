@@ -7,20 +7,21 @@ For training, it is necessary to run [Pokémon Showdown](https://play.pokemonsho
 
 [Presentation video - Project 1 - Tabular Methods and Function Approximation](https://youtu.be/uSZE9gnheSI)
 
-[Presentation video - Project 2 - Deep Reinforcement Learning](https://youtu.be/rEVboOny7rY)
+[Presentation video - Project 2 - Deep Reinforcement Learning](https://youtu.be/pgIfTQnjdzA)
 
 Graphics available at:
 * [Graphs MC Control, MC Control FA, Q-Learning, Q-Learning FA, SARSA($\lambda$) Deterministic, SARSA($\lambda$) FA, DQN and Double-DQN](https://app.neptune.ai/leolellisr/rl-pokeenv)
 * [Graphs SARSA($\lambda$) Stochastic](https://app.neptune.ai/mauricioplopes/poke-env)
 * [Graphs PPO](https://github.com/leolellisr/poke_RL/tree/master/images/report/ppo_results)
-
+* [Graphs REINFORCE - Keras 2018](https://app.neptune.ai/henriqueoliveira/rl-pokeenv/e/RLPOK-4/charts)
+ 
 Notebooks of implemented Tabular Methods and Function Approximation Methods available [here](https://github.com/leolellisr/poke_RL/tree/master/notebooks)
 
 Python files of implemented methods available [here](https://github.com/leolellisr/poke_RL/tree/master/py)
 
 json files of trained tabular methods available [here](https://drive.google.com/drive/folders/1GwNQSsOR0PPtPKlbIy9NzWvTnTtMOD8_?usp=sharing)
 
-Trained models of deep reinforcement learning methods available [here](https://drive.google.com/drive/folders/17_Gn1RWOCh-ekiRhhj40ehPz9nv_d-Fy?usp=sharing)
+Trained models of deep reinforcement learning methods (DQN-Keras; Double DQN-Keras; PPO2-Stable Baselines) available [here](https://drive.google.com/drive/folders/17_Gn1RWOCh-ekiRhhj40ehPz9nv_d-Fy?usp=sharing)
 
 ## Goal and Motivation
 
@@ -229,12 +230,15 @@ To adapt our environment to a deterministic setup, we had to establish the follo
 * [DQN - Keras 2018](https://notebooks.githubusercontent.com/view/github.com/keras-rl/keras-rl/blob/master/rl/agents/dqn.py)
 * [Double-DQN - Keras 2018](https://notebooks.githubusercontent.com/view/github.com/keras-rl/keras-rl/blob/master/rl/agents/dqn.py)
 * [PPO - Stable Baselines 2021](https://notebooks.githubusercontent.com/view/github.com/Stable-Baselines-Team/stable-baselines/blob/master/stable_baselines/ppo2/ppo2.py)
+* REINFORCE - Keras 2018
+* DQN - Pytorch
+* REINFORCE - Pytorch
 
 # Comparisons
 
 One table with performance comparisons in Validation between our Tabular Methods and Function Approximation implemented and some methods proposed in literature are showed in [this figure](https://imgur.com/vwUOnDZ).
 
-One table with performance comparisons in Validation between our Deep Reinforcement Learning methods implemented, our best performance method from P1 and one method proposed in literature are showed in [this figure](https://imgur.com/wwvFnRZ).
+One table with performance comparisons in Validation between our Deep Reinforcement Learning methods implemented, our best performance method from P1 and one method proposed in literature are showed in [this figure](https://imgur.com/4A4X54z).
 
 The Function Approximation method with the best performance against both Players (MaxDamagePlayer and RandomPlayer) was Q-Learning Function Approximation in the Stochastic environment.
 
