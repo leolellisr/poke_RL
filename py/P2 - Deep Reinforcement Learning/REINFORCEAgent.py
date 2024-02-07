@@ -1,3 +1,5 @@
+# Base Keras classes for training and testing with REINFORCE 
+
 import numpy as np
 import tensorflow as tf
 import tensorflow.keras.backend as K
@@ -6,7 +8,7 @@ from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.models import Sequential, load_model
 
-
+# REINFORCE agent
 class REINFORCEAgent(object):
     def __init__(self, nb_states, nb_actions, nb_hidden=128, alpha=0.0005, gamma=0.99):
         self.nb_actions = nb_actions

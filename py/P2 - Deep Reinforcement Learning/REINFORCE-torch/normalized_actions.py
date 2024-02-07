@@ -1,3 +1,5 @@
+# class for normalize actions
+
 import gym
 
 

@@ -148,8 +148,6 @@ class Player(PlayerNetwork, ABC):
         self.gamma = gamma
         self.policy = make_epsilon_greedy_policy(self.Q, self.n0, self.N)
         self.episode = []
-#        self.reward_per_battle = []
-#        self.all_rewards = []
         self.visited_states = []
         self._reward_buffer = {}
         self.previous_action = -10

@@ -144,15 +144,12 @@ class Player(PlayerNetwork, ABC):
 
         self.logger.debug("Player initialisation finished")
         self.action_space = list(range(4 + 5))
-        #self.Q = defaultdict(lambda: np.zeros(len(self.action_space)))
         self.estimator = estimator
         self.N = defaultdict(lambda: np.zeros(len(self.action_space)))
         self.n0 = n0
         self.gamma = gamma
         self.policy = make_epsilon_greedy_policy(self.estimator, self.n0, self.N)
         self.episode = []
-#        self.reward_per_battle = []
-#        self.all_rewards = []
         self.visited_states = []
         self._reward_buffer = {}
         self.previous_action = -10

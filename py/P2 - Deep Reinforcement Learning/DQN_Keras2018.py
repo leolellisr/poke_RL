@@ -1,4 +1,4 @@
-## Stochastic
+## Code for training and testing with DQN-Keras in Pokémon Showdown
 ##
 ## DQN Keras 2018: https://github.com/keras-rl/keras-rl/blob/master/rl/agents/dqn.py
 ##
@@ -20,25 +20,24 @@ from rl.agents.dqn import DQNAgent
 from rl.policy import LinearAnnealedPolicy, EpsGreedyQPolicy
 from rl.memory import SequentialMemory
 
-#import keras
 from tensorflow.keras.layers import Dense, Flatten
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.optimizers import Adam
 from distutils.util import strtobool
 import neptune.new as neptune
-#import nest_asyncio
 
 import pandas as pd
 import time
 import json
 import os
-#import matplotlib
+
 from collections import defaultdict
 from datetime import date
 from itertools import product
 from scipy.interpolate import griddata
 import argparse
 
+# Definition of the agent stochastic team (Pokémon Showdown template)
 OUR_TEAM_STO = """ 
 Pikachu-Original (M) @ Light Ball  
 Ability: Static  
@@ -97,6 +96,7 @@ Adamant Nature
 - Iron Head  
 """
 
+# Definition of the opponent stochastic team (Pokémon Showdown template)
 OP_TEAM_STO = """
 Eevee @ Eviolite  
 Ability: Adaptability  
@@ -156,6 +156,7 @@ Careful Nature
 - Wish  
 """
 
+# Encoding stochastic Pokémon Name for ID
 NAME_TO_ID_DICT_STO = {
     "pikachuoriginal": 0,
     "charizard": 1,
@@ -171,6 +172,7 @@ NAME_TO_ID_DICT_STO = {
     "umbreon": 5
 }  
 
+# Definition of the agent deterministic team (Pokémon Showdown template)
 OUR_TEAM = """
 Turtonator @ White Herb  
 Ability: Shell Armor  
@@ -228,6 +230,8 @@ Adamant Nature
 - No Retreat  
 
 """
+
+# Definition of the opponent deterministic team (Pokémon Showdown template)
 OP_TEAM = """
 Cloyster @ Assault Vest  
 Ability: Shell Armor  
@@ -286,6 +290,7 @@ Adamant Nature
 
 """
 
+# Encoding deterministic Pokémon Name for ID
 NAME_TO_ID_DICT = {
 "turtonator": 0,
 "lapras": 1,
@@ -340,49 +345,16 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-#nest_asyncio.apply()
 np.random.seed(0)
 
+# Definition of DQN player
 class DQL_RLPlayer(Gen8EnvSinglePlayer):
     def __init__(self, battle_format, team, mode):
             super().__init__(battle_format=battle_format, team=team)
             self.mode = mode 
             self.num_battles = 0
-            #self.num_battles_avg = 0
-            #self.n_won_battles_avg = self.n_won_battles
             self._ACTION_SPACE = list(range(4 + 5))
     def embed_battle(self, battle):
-        # -1 indicates that the move does not have a base power
-        # or is not available
-    #    moves_base_power = -np.ones(4)
-    #    moves_dmg_multiplier = np.ones(4)
-    #    for i, move in enumerate(battle.available_moves):
-    #        moves_base_power[i] = (
-    #            move.base_power / 100
-    #        )  # Simple rescaling to facilitate learning
-    #        if move.type:
-    #            moves_dmg_multiplier[i] = move.type.damage_multiplier(
-    #                battle.opponent_active_pokemon.type_1,
-    #                battle.opponent_active_pokemon.type_2,
-    #            )
-
-        # We count how many pokemons have not fainted in each team
-    #    remaining_mon_team = (
-    #        len([mon for mon in battle.team.values() if mon.fainted]) / 6
-    #    )
-    #    remaining_mon_opponent = (
-    #        len([mon for mon in battle.opponent_team.values() if mon.fainted]) / 6
-    #    )
-
-        # Final vector with 10 components
-    #    return np.concatenate(
-    #        [
-    #            moves_base_power,
-    #            moves_dmg_multiplier,
-    #            [remaining_mon_team, remaining_mon_opponent],
-    #        ]
-    #    )
-
         # -1 indicates that the move does not have a base power
         # or is not available
         moves_base_power = -np.ones(4)
@@ -405,15 +377,7 @@ class DQL_RLPlayer(Gen8EnvSinglePlayer):
             len([mon for mon in battle.opponent_team.values() if mon.fainted])
         )
 
-    #    state = list()
-    #    state.append(NAME_TO_ID_DICT[str(battle.active_pokemon).split(' ')[0]])
-    #    state.append(NAME_TO_ID_DICT[str(battle.opponent_active_pokemon).split(' ')[0]])
-    #    for move_base_power in moves_base_power:
-    #        state.append('{0:.2f}'.format(move_base_power))
-    #    for move_dmg_multiplier in moves_dmg_multiplier:
-    #        state.append('{0:.2f}'.format(move_dmg_multiplier))
-    #    state.append(n_fainted_mon_team)
-    #    state.append(n_fainted_mon_opponent)
+
         state= np.concatenate([
             [NAME_TO_ID_DICT[str(battle.active_pokemon).split(' ')[0]]],
             [NAME_TO_ID_DICT[str(battle.opponent_active_pokemon).split(' ')[0]]],
@@ -483,17 +447,12 @@ class DQL_RLPlayer(Gen8EnvSinglePlayer):
         
     def _battle_finished_callback(self, battle):
         self.num_battles += 1
-        #self.num_battles_avg += 1
         if args.neptune:
             run[f'{self.mode} win_acc'].log(self.n_won_battles / self.num_battles)
-        #    run[f'{self.mode} win_acc avg'].log(self.n_won_battles_avg / self.num_battles_avg)
-
-        #if self.num_battles%100==0:
-        #    self.num_battles_avg = 0
-        #    self.n_won_battles_avg = 0
 
         self._observations[battle].put(self.embed_battle(battle))
 
+# Definition of MaxDamagePlayer
 class MaxDamagePlayer(RandomPlayer):
     def choose_move(self, battle):
         # If the player can attack, it will
@@ -507,17 +466,12 @@ class MaxDamagePlayer(RandomPlayer):
             return self.choose_random_move(battle)
 
 
-
-#tf.random.set_seed(0)
-#np.random.seed(0)
-
-
 # This is the function that will be used to train the dqn
 def dqn_training(player, dqn, nb_steps):
     dqn.fit(player, nb_steps=nb_steps, verbose=0)
     player.complete_current_battle()
 
-
+# This is the function that will be used to evaluate the dqn
 def dqn_evaluation(player, dqn, nb_episodes):
     # Reset battle statistics
     player.reset_battles()
@@ -528,14 +482,14 @@ def dqn_evaluation(player, dqn, nb_episodes):
         % (player.n_won_battles, nb_episodes)
     )
 
-
+# Main program
 if __name__ == "__main__":
 
     args = parse_args()
 
     if args.neptune:
-        run = neptune.init(project='leolellisr/rl-pokeenv',
-                        api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI1NjY1YmJkZi1hYmM5LTQ3M2QtOGU1ZC1iZTFlNWY4NjE1NDQifQ==',
+        run = neptune.init(project='your_project',
+                        api_token='your_api_token==',
                         tags=["DeepRL", args.exp_name, args.env, str(args.epochs)+"epochs"])
 
     
@@ -545,6 +499,7 @@ if __name__ == "__main__":
     NB_TRAINING_STEPS = NB_TRAINING_EPISODES*EPOCHS
     NB_EVALUATION_EPISODES = int(NB_TRAINING_EPISODES/3)
     N_STATE_COMPONENTS = 12
+
     # num of features = num of state components + action
     N_FEATURES = N_STATE_COMPONENTS + 1
 
@@ -618,6 +573,7 @@ if __name__ == "__main__":
         model.save("model_%d" % NB_TRAINING_STEPS)
 
     env_player.mode = "val_max"
+
     # Evaluation
     print("Results against max player:")
     env_player.num_battles=0

@@ -1,4 +1,4 @@
-## Stochastic
+## Code for training and testing with PPO, from Stable Baselines, in Pokémon Showdown
 ##
 ## ddpg Keras 2018: https://github.com/keras-rl/keras-rl/blob/master/rl/agents/ddpg.py
 ##
@@ -8,7 +8,6 @@
 ##
 
 import numpy as np
-#import tensorflow as tf
 import asyncio
 
 from poke_env.player.env_player import Gen8EnvSinglePlayer
@@ -22,13 +21,11 @@ from gym.spaces import Box, Discrete
 
 from distutils.util import strtobool
 import neptune.new as neptune
-#import nest_asyncio
 
 import pandas as pd
 import time
 import json
 import os
-#import matplotlib
 from collections import defaultdict
 from datetime import date
 from itertools import product
@@ -36,6 +33,7 @@ from scipy.interpolate import griddata
 import argparse
 import matplotlib.pyplot as plt
 
+# Definition of the agent stochastic team (Pokémon Showdown template)
 OUR_TEAM = """ 
 Pikachu-Original (M) @ Light Ball  
 Ability: Static  
@@ -94,6 +92,7 @@ Adamant Nature
 - Iron Head  
 """
 
+# Definition of the opponent stochastic team (Pokémon Showdown template)
 OP_TEAM = """
 Eevee @ Eviolite  
 Ability: Adaptability  
@@ -153,6 +152,7 @@ Careful Nature
 - Wish  
 """
 
+# Encoding stochastic Pokémon Name for ID
 NAME_TO_ID_DICT = {
     "pikachuoriginal": 0,
     "charizard": 1,
@@ -168,6 +168,7 @@ NAME_TO_ID_DICT = {
     "umbreon": 5
 }  
 
+# Definition of the agent deterministic team (Pokémon Showdown template)
 OUR_TEAM_DET = """
 Turtonator @ White Herb  
 Ability: Shell Armor  
@@ -225,6 +226,8 @@ Adamant Nature
 - No Retreat  
 
 """
+
+# Definition of the opponent deterministic team (Pokémon Showdown template)
 OP_TEAM_DET = """
 Cloyster @ Assault Vest  
 Ability: Shell Armor  
@@ -283,6 +286,7 @@ Adamant Nature
 
 """
 
+# Encoding deterministic Pokémon Name for ID
 NAME_TO_ID_DICT_DET = {
 "turtonator": 0,
 "lapras": 1,
@@ -337,17 +341,14 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-#nest_asyncio.apply()
 np.random.seed(0)
 
+# Definition of PPO player
 class PPO_RLPlayer(Gen8EnvSinglePlayer):
     def __init__(self, battle_format, team, mode):
             super().__init__(battle_format=battle_format, team=team)
             self.mode = mode 
             self.num_battles = 0
-            #self.num_battles_avg = 0
-            #self.n_won_battles_avg = self.n_won_battles
-            #self._ACTION_SPACE = list(range(4 + 5))
             self.observation_space = Box(low=-10, high=10, shape=(12,))
             self._ACTION_SPACE = Discrete(9)
 
@@ -355,37 +356,6 @@ class PPO_RLPlayer(Gen8EnvSinglePlayer):
         return self
 
     def embed_battle(self, battle):
-        # -1 indicates that the move does not have a base power
-        # or is not available
-    #    moves_base_power = -np.ones(4)
-    #    moves_dmg_multiplier = np.ones(4)
-    #    for i, move in enumerate(battle.available_moves):
-    #        moves_base_power[i] = (
-    #            move.base_power / 100
-    #        )  # Simple rescaling to facilitate learning
-    #        if move.type:
-    #            moves_dmg_multiplier[i] = move.type.damage_multiplier(
-    #                battle.opponent_active_pokemon.type_1,
-    #                battle.opponent_active_pokemon.type_2,
-    #            )
-
-        # We count how many pokemons have not fainted in each team
-    #    remaining_mon_team = (
-    #        len([mon for mon in battle.team.values() if mon.fainted]) / 6
-    #    )
-    #    remaining_mon_opponent = (
-    #        len([mon for mon in battle.opponent_team.values() if mon.fainted]) / 6
-    #    )
-
-        # Final vector with 10 components
-    #    return np.concatenate(
-    #        [
-    #            moves_base_power,
-    #            moves_dmg_multiplier,
-    #            [remaining_mon_team, remaining_mon_opponent],
-    #        ]
-    #    )
-
         # -1 indicates that the move does not have a base power
         # or is not available
         moves_base_power = -np.ones(4)
@@ -407,16 +377,6 @@ class PPO_RLPlayer(Gen8EnvSinglePlayer):
         n_fainted_mon_opponent = (
             len([mon for mon in battle.opponent_team.values() if mon.fainted])
         )
-
-    #    state = list()
-    #    state.append(NAME_TO_ID_DICT[str(battle.active_pokemon).split(' ')[0]])
-    #    state.append(NAME_TO_ID_DICT[str(battle.opponent_active_pokemon).split(' ')[0]])
-    #    for move_base_power in moves_base_power:
-    #        state.append('{0:.2f}'.format(move_base_power))
-    #    for move_dmg_multiplier in moves_dmg_multiplier:
-    #        state.append('{0:.2f}'.format(move_dmg_multiplier))
-    #    state.append(n_fainted_mon_team)
-    #    state.append(n_fainted_mon_opponent)
         state= np.concatenate([
             [NAME_TO_ID_DICT[str(battle.active_pokemon).split(' ')[0]]],
             [NAME_TO_ID_DICT[str(battle.opponent_active_pokemon).split(' ')[0]]],
@@ -477,7 +437,6 @@ class PPO_RLPlayer(Gen8EnvSinglePlayer):
         self._reward_buffer[battle] = current_value
         if args.neptune:
             run[f'{self.mode} reward_buffer'].log(current_value)
-        #    run[f'{self.mode} accum. reward_buffer'].log(sum(self._reward_buffer.values()))
         else: rewards_a.append(current_value)
         return to_return
 
@@ -487,17 +446,14 @@ class PPO_RLPlayer(Gen8EnvSinglePlayer):
         
     def _battle_finished_callback(self, battle):
         self.num_battles += 1
-        #self.num_battles_avg += 1
         if args.neptune:
             run[f'{self.mode} win_acc'].log(self.n_won_battles / self.num_battles)
-        #    run[f'{self.mode} win_acc avg'].log(self.n_won_battles_avg / self.num_battles_avg)
         else: win_a.append(self.n_won_battles / self.num_battles)
-        #if self.num_battles%100==0:
-        #    self.num_battles_avg = 0
-        #    self.n_won_battles_avg = 0
+
 
         self._observations[battle].put(self.embed_battle(battle))
 
+# Definition of DQN validation player
 class MaxDamagePlayer(RandomPlayer):
     def choose_move(self, battle):
         # If the player can attack, it will
@@ -511,18 +467,14 @@ class MaxDamagePlayer(RandomPlayer):
             return self.choose_random_move(battle)
 
 
-
-#tf.random.set_seed(0)
-#np.random.seed(0)
-
-
+# Main program
 if __name__ == "__main__":
 
     args = parse_args()
 
     if args.neptune:
-        run = neptune.init(project='leolellisr/rl-pokeenv',
-                        api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI1NjY1YmJkZi1hYmM5LTQ3M2QtOGU1ZC1iZTFlNWY4NjE1NDQifQ==',
+        run = neptune.init(project='your_project',
+                        api_token='your_api_token==',
                         tags=["DeepRL", args.exp_name, args.env, str(args.epochs)+"epochs"])
 
     
@@ -532,6 +484,7 @@ if __name__ == "__main__":
     NB_TRAINING_STEPS = NB_TRAINING_EPISODES*EPOCHS
     NB_EVALUATION_EPISODES = int(NB_TRAINING_EPISODES/3)
     N_STATE_COMPONENTS = 12
+
     # num of features = num of state components + action
     N_FEATURES = N_STATE_COMPONENTS + 1
 
@@ -551,17 +504,17 @@ if __name__ == "__main__":
 
     if args.saved: 
         modelfolder = args.model_folder
-        #model = tf.keras.models.load_model(modelfolder)
     else: 
         model = PPO2("MlpPolicy", env_player, gamma=args.gamma, verbose=0)
 
+# Train
     def ppo_training(player):
 
         print ("Training...")
         model.learn(total_timesteps=NB_TRAINING_STEPS)
         print("Training complete.")
 
-
+# Validation
     def ppo_evaluating(player):
         player.reset_battles()
         for _ in range(NB_EVALUATION_EPISODES):
@@ -588,8 +541,6 @@ if __name__ == "__main__":
 
     if not args.neptune:
         plt.figure(figsize=(25,20))
-
-        #fig, axes = plt.subplots(6, 3, figsize=(30, 30))
         fig, ax1 = plt.subplots(figsize=(25, 20))
         ax1.plot(rewards_a, 'b:') #color=color
         plt.savefig('rewards.pdf')  
@@ -599,6 +550,7 @@ if __name__ == "__main__":
         plt.savefig('win.pdf')  
 
     env_player.mode = "val_max"
+
     # Evaluation
     print("Results against max player:")
     env_player.num_battles=0
