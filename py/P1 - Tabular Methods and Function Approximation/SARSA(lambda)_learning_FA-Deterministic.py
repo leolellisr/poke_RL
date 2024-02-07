@@ -1,8 +1,8 @@
-#!/usr/bin/env python
-# coding: utf-8
+# Code for training and testing a Player in Pokemon Showdown using SARSA(lambda) with Function Approximation in Deterministic Environment
 
-# In[30]:
-
+# Comparative Table: https://prnt.sc/1ytqrzm
+# Action space: 4 moves + 5 switches
+# poke-env installed in C:\\Users\\-\\anaconda3\\envs\\poke_env\\lib\\site-packages
 
 # imports
 
@@ -25,18 +25,14 @@ from matplotlib import pyplot
 from poke_env.environment.abstract_battle import AbstractBattle
 from poke_env.player.battle_order import ForfeitBattleOrder
 from poke_env.player.player import Player
-# from poke_env.player.random_player import RandomPlayer
 from scipy.interpolate import griddata
 from src.PlayerQLearning import Player as PlayerSarsa
 
-use_neptune = True
+use_neptune = False
 if use_neptune:
-    run = neptune.init(project='leolellisr/rl-pokeenv',
-                       api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI1NjY1YmJkZi1hYmM5LTQ3M2QtOGU1ZC1iZTFlNWY4NjE1NDQifQ==',
-                       name= 'SarsaDeterministic', tags=['Bruno_', 'SarsaFA', 'Deterministic', 'Train'])
-
-
-# In[31]:
+    run = neptune.init(project='your_project',
+                       api_token='your_api_token==',
+                       name= 'SarsaDeterministic', tags=['SarsaFA', 'Deterministic', 'Train'])
 
 
 # global configs
@@ -49,10 +45,7 @@ nest_asyncio.apply()
 np.random.seed(0)
 
 
-# In[32]:
-
-
-# our team
+# Definition of agent's team (Pokémon Showdown template)
 
 OUR_TEAM = """
 Turtonator @ White Herb  
@@ -113,10 +106,7 @@ Adamant Nature
 """
 
 
-# In[33]:
-
-
-# opponent's team
+# Definition of opponent's team (Pokémon Showdown template)
 
 OP_TEAM = """
 Cloyster @ Assault Vest  
@@ -177,9 +167,6 @@ Adamant Nature
 """
 
 
-# In[34]:
-
-
 N_STATE_COMPONENTS = 12
 # num of features = num of state components + action
 N_FEATURES = N_STATE_COMPONENTS + 1
@@ -190,6 +177,7 @@ N_OUR_ACTIONS = N_OUR_MOVE_ACTIONS + N_OUR_SWITCH_ACTIONS
 
 ALL_OUR_ACTIONS = np.array(range(0, N_OUR_ACTIONS))
 
+# Encoding Pokémon Name for ID
 NAME_TO_ID_DICT = {
     "turtonator": 0,
     "lapras": 1,
@@ -206,11 +194,7 @@ NAME_TO_ID_DICT = {
 }
 
 
-# In[35]:
-
-
-# Max-damage player
-
+# Definition of Max-damage player
 class MaxDamagePlayer(Player):
     def choose_move(self, battle):
         if battle.available_moves:
@@ -220,11 +204,7 @@ class MaxDamagePlayer(Player):
             return self.choose_random_move(battle)
 
 
-# In[36]:
-
-
-# SARSA player
-
+# Definition of SARSA with Function Approximation player
 class SARSAFAPlayer(PlayerSarsa):
     def __init__(self, battle_format, team, n0, gamma, lambda_):
         super().__init__(battle_format=battle_format, team=team)
@@ -403,11 +383,7 @@ class SARSAFAPlayer(PlayerSarsa):
         return self.reward_computing_helper(battle, fainted_value=2, hp_value=1, victory_value=15)
 
 
-# In[41]:
-
-
-# sarsa V player
-
+# Definition of SARSA with function approximation validation player
 class ValidationPlayer(PlayerSarsa):
     def __init__(self, battle_format, team, w):
         super().__init__(battle_format=battle_format, team=team)
@@ -418,7 +394,6 @@ class ValidationPlayer(PlayerSarsa):
         # let's get the greedy action. Ties must be broken arbitrarily
         q_approx = np.array([self.q_approx(state, action, self.w) for action in range(N_OUR_ACTIONS)])
         action = np.argmax(q_approx)
-        #action = np.argmax(np.where(q_approx == q_approx.max())[0])
 
         # if the selected action is not possible, perform a random move instead
         if action == -1:
@@ -485,9 +460,6 @@ class ValidationPlayer(PlayerSarsa):
         return state
 
 
-# In[42]:
-
-
 # global parameters
 
 # possible values for num_battles (number of episodes)
@@ -508,9 +480,55 @@ list_of_params = [
     } for n_battles, n0, gamma, lambda_ in product(n_battles_array, n0_array, gamma_array, lambda_)
 ]
 
+# json helper functions
 
-# In[44]:
+def save_array_to_json(path_dir, filename, data):
+    if not os.path.exists(path_dir):
+        os.makedirs(path_dir)
+    full_filename = path_dir + "/" + filename
+    # write
+    with open(full_filename, "w") as file:
+        json.dump(data if isinstance(data, list) else data.tolist(), file)
+        file.close()
 
+def save_dict_to_json(path_dir, filename, data, append=True):
+    if not os.path.exists(path_dir):
+        os.makedirs(path_dir)
+    full_filename = path_dir + "/" + filename
+    if os.path.exists(full_filename) and append:
+        with open(full_filename, "r") as file:
+            value_dict = json.load(file)
+            for key in data:
+                value_dict[key] = data[key] if isinstance(data[key], list) else data[key].tolist()
+            file.close()
+    else:
+        value_dict = dict()
+        for key in data:
+            value_dict[key] = data[key] if isinstance(data[key], list) else data[key].tolist()
+    # write
+    with open(full_filename, "w") as file:
+        json.dump(value_dict, file)
+        file.close()
+
+
+def read_array_from_json(path_dir, filename):
+    full_filename = path_dir + "/" + filename
+    if not os.path.exists(full_filename):
+        return None
+    file = open(full_filename, "r")
+    data = json.load(file)
+    file.close()
+    return data
+
+
+def read_dict_from_json(path_dir, filename):
+    full_filename = path_dir + "/" + filename
+    if not os.path.exists(full_filename):
+        return None
+    file = open(full_filename, "r")
+    data = json.load(file)
+    file.close()
+    return data
 
 # let's battle!
 async def lets_battle():
@@ -558,24 +576,13 @@ async def lets_battle():
         save_dict_to_json("./SarsaDeterministic_Learning_FA_statistics2", "statistics.json", data)
 
 
-# In[45]:
-
-
 loop = asyncio.get_event_loop()
 loop.run_until_complete(loop.create_task(lets_battle()))
 
 
-# In[13]:
-
-
 if use_neptune: run.stop()
 
-
-# In[21]:
-
-
-# validation max player
-
+# validation vs max player
 async def do_battle_validation(path_dir):
     # read from json
     for filename in os.listdir(path_dir):
@@ -588,7 +595,7 @@ async def do_battle_validation(path_dir):
         gamma = float(params[3])
         lambda_ = float(params[4])
 
-        # validation (play 1/3 of the battles using Q-learned table)
+        # validation (play 1/3 of the battles)
         start = time.time()
         validation_player = ValidationPlayer(battle_format="gen8ou", team=OUR_TEAM, w=w)
         opponent = MaxDamagePlayer(battle_format="gen8ou", team=OP_TEAM)
@@ -606,15 +613,8 @@ async def do_battle_validation(path_dir):
               ))
 
 
-# In[ ]:
-
-
 loop = asyncio.get_event_loop()
 loop.run_until_complete(loop.create_task(do_battle_validation("./SarsaDeterministic_FA_w_10k")))
-
-
-# In[24]:
-
 
 from poke_env.player.player import Player
 from poke_env.player.random_player import RandomPlayer
@@ -622,10 +622,7 @@ from poke_env.player.random_player import RandomPlayer
 randomPlayer = RandomPlayer(battle_format="gen8ou", team=OUR_TEAM)
 
 
-# In[27]:
-
-
-# validation random player
+# validation vs random player
 
 async def do_battle_validation(path_dir):
     # read from json
@@ -639,7 +636,7 @@ async def do_battle_validation(path_dir):
         gamma = float(params[3])
         lambda_ = float(params[4])
 
-        # validation (play 1/3 of the battles using Q-learned table)
+        # validation (play 1/3 of the battles)
         start = time.time()
         validation_player = ValidationPlayer(battle_format="gen8ou", team=OUR_TEAM, w=w)
         opponent = RandomPlayer(battle_format="gen8ou", team=OUR_TEAM)
@@ -655,9 +652,6 @@ async def do_battle_validation(path_dir):
                   round((validation_player.n_won_battles / n_battles_validation) * 100, 2),
                   round(time.time() - start, 2)
               ))
-
-
-# In[ ]:
 
 
 loop = asyncio.get_event_loop()

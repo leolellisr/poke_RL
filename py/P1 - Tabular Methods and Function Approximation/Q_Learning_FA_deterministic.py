@@ -1,8 +1,8 @@
-#!/usr/bin/env python
-# coding: utf-8
+# Code for training and testing a Player in Pokemon Showdown using Q-Learning with Function Approximation in Deterministic Environment
 
-# In[ ]:
-
+# Comparative Table: https://prnt.sc/1ytqrzm
+# Action space: 4 moves + 5 switches
+# poke-env installed in C:\\Users\\-\\anaconda3\\envs\\poke_env\\lib\\site-packages
 
 # imports
 
@@ -23,13 +23,8 @@ from matplotlib import pyplot
 from poke_env.environment.abstract_battle import AbstractBattle
 from poke_env.player.battle_order import ForfeitBattleOrder
 from poke_env.player.player import Player
-# from poke_env.player.random_player import RandomPlayer
 from scipy.interpolate import griddata
 from src.PlayerQLearning import Player as PlayerQLearning
-
-
-# In[ ]:
-
 
 # global configs
 
@@ -42,16 +37,11 @@ nest_asyncio.apply()
 np.random.seed(0)
 
 if use_neptune:
-    run = neptune.init(project='leolellisr/rl-pokeenv',
-                       api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI1NjY1YmJkZi1hYmM5LTQ3M2QtOGU1ZC1iZTFlNWY4NjE1NDQifQ==',
-                       tags=["Henrique", "Q-learning FA deterministic"])
+    run = neptune.init(project='your_project',
+                       api_token='your_api_token==',
+                       tags=["Q-learning FA deterministic"])
 
-
-# In[ ]:
-
-
-# our team
-
+# Definition of agent's team (Pokémon Showdown template)
 OUR_TEAM = """
 Turtonator @ White Herb  
 Ability: Shell Armor  
@@ -110,10 +100,7 @@ Adamant Nature
 """
 
 
-# In[ ]:
-
-
-# opponent's team
+# Definition of opponent's team (Pokémon Showdown template)
 
 OP_TEAM = """
 Cloyster @ Assault Vest  
@@ -173,9 +160,6 @@ Adamant Nature
 """
 
 
-# In[ ]:
-
-
 N_STATE_COMPONENTS = 12
 # num of features = num of state components + action
 N_FEATURES = N_STATE_COMPONENTS + 1
@@ -185,6 +169,8 @@ N_OUR_SWITCH_ACTIONS = 5
 N_OUR_ACTIONS = N_OUR_MOVE_ACTIONS + N_OUR_SWITCH_ACTIONS
 
 ALL_OUR_ACTIONS = np.array(range(0, N_OUR_ACTIONS))
+
+# Encoding Pokémon Name for ID
 
 NAME_TO_ID_DICT = {
     "turtonator": 0,
@@ -202,10 +188,7 @@ NAME_TO_ID_DICT = {
 }
 
 
-# In[ ]:
-
-
-# Max-damage player
+# Definition of MaxDamagePlayer
 
 class MaxDamagePlayer(Player):
     def choose_move(self, battle):
@@ -216,10 +199,7 @@ class MaxDamagePlayer(Player):
             return self.choose_random_move(battle)
 
 
-# In[ ]:
-
-
-# Q-learning FA player
+# Definition of Q-Learning with Function Approximation Player
 
 class QLearningFAPlayer(PlayerQLearning):
     def __init__(self, battle_format, team, n0, alpha0, gamma):
@@ -386,11 +366,7 @@ class QLearningFAPlayer(PlayerQLearning):
         return self.reward_computing_helper(battle, fainted_value=2, hp_value=1, victory_value=15)
 
 
-# In[ ]:
-
-
-# validation player
-
+# Definition of Q-Learning with function approximation validation player
 class ValidationPlayer(PlayerQLearning):
     def __init__(self, battle_format, team, w):
         super().__init__(battle_format=battle_format, team=team)
@@ -467,8 +443,6 @@ class ValidationPlayer(PlayerQLearning):
         return state
 
 
-# In[ ]:
-
 
 # global parameters
 
@@ -490,9 +464,6 @@ list_of_params = [
         'gamma': gamma
     } for n_battles, n0, alpha0, gamma in product(n_battles_array, n0_array, alpha0_array, gamma_array)
 ]
-
-
-# In[ ]:
 
 
 # json helper functions
@@ -547,9 +518,6 @@ def read_dict_from_json(path_dir, filename):
     return data
 
 
-# In[ ]:
-
-
 # main (let's battle!)
 
 # training
@@ -599,12 +567,7 @@ async def do_battle_training():
 loop = asyncio.get_event_loop()
 loop.run_until_complete(loop.create_task(do_battle_training()))
 
-
-# In[ ]:
-
-
-# validation - maxPlayer
-
+# validation vs maxPlayer
 async def do_battle_validation(path_dir):
     # read from json
     for filename in os.listdir(path_dir):
@@ -640,10 +603,7 @@ if use_validation:
     loop.run_until_complete(loop.create_task(do_battle_validation("./Q_Learning_FA_det_w")))
 
 
-# In[ ]:
-
-
-# validation RandomPlayer
+# validation vs RandomPlayer
 
 async def do_battle_validation(path_dir):
     # read from json

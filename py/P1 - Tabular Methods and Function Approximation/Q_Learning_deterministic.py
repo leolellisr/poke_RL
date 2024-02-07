@@ -1,8 +1,8 @@
-#!/usr/bin/env python
-# coding: utf-8
+# Code for training and testing a Player in Pokemon Showdown using Q-Learning in Deterministic Environment
 
-# In[14]:
-
+# Comparative Table: https://prnt.sc/1ytqrzm
+# Action space: 4 moves + 5 switches
+# poke-env installed in C:\\Users\\-\\anaconda3\\envs\\poke_env\\lib\\site-packages
 
 # imports
 
@@ -28,10 +28,6 @@ from poke_env.player.random_player import RandomPlayer
 from scipy.interpolate import griddata
 from src.PlayerQLearning import Player as PlayerQLearning
 
-
-# In[2]:
-
-
 # global configs
 
 debug = True
@@ -43,15 +39,12 @@ nest_asyncio.apply()
 np.random.seed(0)
 
 if use_neptune:
-    run = neptune.init(project='leolellisr/rl-pokeenv',
-                       api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI1NjY1YmJkZi1hYmM5LTQ3M2QtOGU1ZC1iZTFlNWY4NjE1NDQifQ==',
+    run = neptune.init(project='your project',
+                       api_token='your api token',
                        name= 'QLearningDeterministic', tags=['Q-Learning', 'Deterministic', 'Train'])
 
+# Definition of the agent team (Pokémon Showdown template)
 
-# In[3]:
-
-
-# our team
 
 OUR_TEAM = """
 Turtonator @ White Herb  
@@ -111,10 +104,7 @@ Adamant Nature
 """
 
 
-# In[4]:
-
-
-# opponent's team
+# Definition of the opponent team (Pokémon Showdown template)
 
 OP_TEAM = """
 Cloyster @ Assault Vest  
@@ -175,14 +165,14 @@ Adamant Nature
 """
 
 
-# In[5]:
-
 
 N_OUR_MOVE_ACTIONS = 4
 N_OUR_SWITCH_ACTIONS = 5
 N_OUR_ACTIONS = N_OUR_MOVE_ACTIONS + N_OUR_SWITCH_ACTIONS
 
 ALL_OUR_ACTIONS = np.array(range(0, N_OUR_ACTIONS))
+
+# Encoding Pokémon Name for ID
 
 NAME_TO_ID_DICT = {
     "turtonator": 0,
@@ -199,12 +189,7 @@ NAME_TO_ID_DICT = {
     "typenull": 11
 }
 
-
-# In[6]:
-
-
-# Max-damage player
-
+# Definition of MaxDamagePlayer
 class MaxDamagePlayer(Player):
     def choose_move(self, battle):
         if battle.available_moves:
@@ -214,10 +199,7 @@ class MaxDamagePlayer(Player):
             return self.choose_random_move(battle)
 
 
-# In[7]:
-
-
-# Q-learning player
+# Definition of Q-learning player
 
 class QLearningPlayer(PlayerQLearning):
     def __init__(self, battle_format, team, n0, gamma):
@@ -364,12 +346,7 @@ class QLearningPlayer(PlayerQLearning):
     def compute_reward(self, battle) -> float:
         return self.reward_computing_helper(battle, fainted_value=2, hp_value=1, victory_value=15)
 
-
-# In[8]:
-
-
-# validation player
-
+# Definition of QLearning validation player
 class ValidationPlayer(PlayerQLearning):
     def __init__(self, battle_format, team, q):
         super().__init__(battle_format=battle_format, team=team)
@@ -435,8 +412,6 @@ class ValidationPlayer(PlayerQLearning):
         return str(state)
 
 
-# In[9]:
-
 
 # global parameters
 
@@ -455,8 +430,6 @@ list_of_params = [
     } for n_battles, n0, gamma in product(n_battles_array, n0_array, gamma_array)
 ]
 
-
-# In[10]:
 
 
 # json helper functions
@@ -491,8 +464,6 @@ def read_dict_from_json(path_dir, filename):
     return data
 
 
-# In[11]:
-
 
 # main (let's battle!)
 
@@ -525,19 +496,6 @@ async def do_battle_training():
             winning_percentage_s = str(round((params['player'].n_won_battles / params['n_battles']) * 100, 2))
             filename = "Q_" + today_s + "_" + n_battle_s + "_" + n0_s + "_" + gamma_s + "_" + winning_percentage_s + ".json"
             save_dict_to_json("./Q_Learning_table", filename, params['player'].Q, False)
-
-        # statistics: key: "n_battles, n0, gamma", values: list of win or lose
-        #key = str(params['n_battles']) + "_" + str(round(params['n0'], 4)) + "_" + str(round(params['gamma'], 2))
-        #winning_status = list()
-        #for battle in params['player']._battles.values():
-        #    if battle.won:
-        #        winning_status.append(True)
-        #    else:
-        #        winning_status.append(False)
-        # save statistics json file (append)
-        #data = dict()
-        #data[key] = winning_status
-        #save_dict_to_json("./Q_Learning_statistics", "statistics.json", data)
     if use_neptune:
         run.stop()
 
@@ -546,10 +504,7 @@ loop = asyncio.get_event_loop()
 loop.run_until_complete(loop.create_task(do_battle_training()))
 
 
-# In[12]:
-
-
-# validation vsMaxPlayer
+# validation vs MaxPlayer
 
 async def do_battle_validation(path_dir):
     # read from json
@@ -587,10 +542,8 @@ if use_validation:
     loop.run_until_complete(loop.create_task(do_battle_validation("./Q_Learning_table")))
 
 
-# In[16]:
 
-
-# validation vsRandomPlayer
+# validation vs RandomPlayer
 
 async def do_battle_validation(path_dir):
     # read from json
@@ -628,9 +581,6 @@ if use_validation:
     loop.run_until_complete(loop.create_task(do_battle_validation("./Q_Learning_table")))
 
 
-# In[26]:
-
-
 import os
 import json
 import re
@@ -638,19 +588,12 @@ from datetime import date
 today = date.today()
 
 
-# In[27]:
-
-
 from matplotlib import pyplot as plt
 
-
-# In[28]:
 
 
 output_folder = "images/vfunction"
 
-
-# In[29]:
 
 
 # x: index_pokemon*20+sum(moves_base_power * moves_dmg_multiplier)
@@ -669,7 +612,6 @@ for filenameQ in os.listdir(directoryQ):
     z_values = []
     x_values = []
     y_values = []
-    #for state, actions in test['player_val'].Q.items():
     for state, actions in Qjson.items():    
         action_value = np.max(actions)
         z_values.append(action_value)
@@ -679,11 +621,8 @@ for filenameQ in os.listdir(directoryQ):
         x_values.append(x_emb)
         y_emb = key_float[8]-key_float[9]
         y_values.append(y_emb)
-        #V[x_emb,y_emb] = action_value
     v_array.append((x_values, y_values, z_values))
 
-
-# In[30]:
 
 
 # x: index_pokemon*20+sum(moves_base_power * moves_dmg_multiplier)
@@ -723,8 +662,6 @@ for vvalue, filenameQ in zip(v_array, os.listdir(directoryQ)):
     plt.show()
 
 
-# In[22]:
-
 
 # x: sum(moves_base_power * moves_dmg_multiplier)
 # y: remaining_mon_team - remaining_mon_opponent
@@ -755,10 +692,6 @@ for filenameQ in os.listdir(directoryQ):
         y_values.append(y_emb)
         #V[x_emb,y_emb] = action_value
     v_array.append((x_values, y_values, z_values))
-
-
-# In[23]:
-
 
 # x: sum(moves_base_power * moves_dmg_multiplier)
 # y: remaining_mon_team - remaining_mon_opponent
@@ -797,15 +730,12 @@ for vvalue, filenameQ in zip(v_array, os.listdir(directoryQ)):
     plt.show()
 
 
-# In[24]:
-
-
 # x: (remaining_mon_team - remaining_mon_opponent)*sum(moves_base_power * moves_dmg_multiplier)
 # y: action
 # z: value function
 v_array = []
-#for test in tests:
-directoryQ = r'S:\poke_env\Q_Learning_table'
+
+directoryQ = r'path\Q_Learning_table'
 
 for filenameQ in os.listdir(directoryQ):
     Qjson_file = open(directoryQ+'/'+filenameQ,)
@@ -829,9 +759,6 @@ for filenameQ in os.listdir(directoryQ):
         y_values.append(y_emb)
         #V[x_emb,y_emb] = action_value
     v_array.append((x_values, y_values, z_values))
-
-
-# In[25]:
 
 
 # x: (remaining_mon_team - remaining_mon_opponent)*sum(moves_base_power * moves_dmg_multiplier)
@@ -869,16 +796,5 @@ for vvalue, filenameQ in zip(v_array, os.listdir(directoryQ)):
         os.makedirs(path_plot)
     plt.savefig(path_plot+filename)     
     plt.show()    
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
 
 
