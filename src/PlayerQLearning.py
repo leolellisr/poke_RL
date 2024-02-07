@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
-"""This module defines a base class for players.
-"""
+# This module defines a base class for players.
+
 import asyncio
 from time import perf_counter
 
