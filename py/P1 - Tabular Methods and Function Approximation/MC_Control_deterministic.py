@@ -1,32 +1,8 @@
-#!/usr/bin/env python
-# coding: utf-8
+# Code for training and testing a Player in Pokemon Showdown using Monte Carlo in Deterministic Environment
 
-# In[ ]:
-
-
-# Notebook for training and testing a Player in Pokemon Showdown using Monte Carlo 
-
-
-# In[ ]:
-
-
-"""
-Comparative Table: https://prnt.sc/1ytqrzm
-------
-neptune
-Action space: 4 moves + 5 switches
-poke-env installed in C:\\Users\\-\\anaconda3\\envs\\poke_env\\lib\\site-packages
-"""
-
-
-# In[ ]:
-
-
-
-
-
-# In[2]:
-
+# Comparative Table: https://prnt.sc/1ytqrzm
+# Action space: 4 moves + 5 switches
+# poke-env installed in C:\\Users\\-\\anaconda3\\envs\\poke_env\\lib\\site-packages
 
 # Imports
 
@@ -43,7 +19,6 @@ from src.playerMC import Player as PlayerMC
 
 from poke_env.player.player import Player 
 from poke_env.player.random_player import RandomPlayer
-
 from poke_env.environment.abstract_battle import AbstractBattle
 
 import matplotlib
@@ -56,12 +31,10 @@ np.random.seed(0)
 use_neptune = False
 if use_neptune:
     import neptune.new as neptune
-    run = neptune.init(project='leolellisr/rl-pokeenv',
-                       api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI1NjY1YmJkZi1hYmM5LTQ3M2QtOGU1ZC1iZTFlNWY4NjE1NDQifQ==')
+    run = neptune.init(project='your project',
+                       api_token='your api token')
 
-
-# In[3]:
-
+# Encoding Pokémon Name for ID
 
 def name_to_id(name):
     if(name == 'turtonator'): return 0
@@ -77,10 +50,7 @@ def name_to_id(name):
     if(name == 'drednaw'): return 4 
     if(name == 'typenull'): return 5     
 
-
-# In[4]:
-
-
+# Definition of MaxDamagePlayer
 class MaxDamagePlayer(Player):
     def choose_move(self, battle):
         # If the player can attack, it will
@@ -94,9 +64,7 @@ class MaxDamagePlayer(Player):
             return self.choose_random_move(battle)
 
 
-# In[5]:
-
-
+# Definition of Monte Carlo Player
 class MCPlayer(PlayerMC):
     def choose_move(self, battle):
         # In the 1st state of all we don't append yet;
@@ -245,7 +213,6 @@ class MCPlayer(PlayerMC):
                 # step-size: 1./N[state][action]
                 
                 self.Q[state][action] += (1/self.N[state][action])*(returnGt-self.Q[state][action]) 
-                #run[f'N0: {self.n0} gamma: {self.gamma} q_value'].log(self.Q[state][action])
                 self.visited_states.append(state)
                 
         self.visited_states = []
@@ -258,10 +225,7 @@ class MCPlayer(PlayerMC):
         if use_neptune: run[f'N0: {self.n0} gamma: {self.gamma} win_acc'].log(self.n_won_battles/len(self._reward_buffer))
         
 
-
-# In[6]:
-
-
+# Definition of the agent team (Pokémon Showdown template)
 our_team = """
 Turtonator @ White Herb  
 Ability: Shell Armor  
@@ -321,9 +285,7 @@ Adamant Nature
 """
 
 
-# In[7]:
-
-
+# Definition of the opponent team (Pokémon Showdown template)
 op_team = """
 Cloyster @ Assault Vest  
 Ability: Shell Armor  
@@ -383,15 +345,6 @@ Adamant Nature
 """
 
 
-# In[ ]:
-
-
-
-
-
-# In[8]:
-
-
 # Global variables
 
 # 3 sets of tests; 10k battles each
@@ -409,56 +362,29 @@ tests =[ {'n0': n0,
           'battle_format':"gen8ou"}
         for n0,gamma,n_battle,our_team,op_team in zip(n0_array,gamma_array,n_battles,our_team_array,op_team_array)]
 
-
-# In[9]:
-
-
-len(tests)
-
-
-# In[ ]:
-
-
-
-
-
-# In[9]:
-
-
-for test in tests:
-    start = time.time()
-    if use_neptune: run['params'] = test
-    test['opponent'] = MaxDamagePlayer(battle_format="gen8ou", team=test['against'])
-    test['player'] = MCPlayer(battle_format="gen8ou", team=test['team'], n0=test['n0'], gamma=test['gamma'])
-    await test['player'].battle_against(test['opponent'], n_battles=test['n_battles'])
-    
-    print(
-        "Player with N0=%f and gamma=%f won %d / %d battles [this is %f percent and took %f seconds]"
-        % (
-            round(test['n0'], 8), 
-            round(test['gamma'], 8),
-            test['player'].n_won_battles,
-            len(test['player']._reward_buffer),
-            round(test['player'].n_won_battles/len(test['player']._reward_buffer)*100, 2),
-            round(time.time() - start, 2)
+async def lets_battle(tests):
+    for test in tests:
+        start = time.time()
+        if use_neptune: run['params'] = test
+        test['opponent'] = MaxDamagePlayer(battle_format="gen8ou", team=test['against'])
+        test['player'] = MCPlayer(battle_format="gen8ou", team=test['team'], n0=test['n0'], gamma=test['gamma'])
+        await test['player'].battle_against(test['opponent'], n_battles=test['n_battles'])
+        
+        print(
+            "Player with N0=%f and gamma=%f won %d / %d battles [this is %f percent and took %f seconds]"
+            % (
+                round(test['n0'], 8), 
+                round(test['gamma'], 8),
+                test['player'].n_won_battles,
+                len(test['player']._reward_buffer),
+                round(test['player'].n_won_battles/len(test['player']._reward_buffer)*100, 2),
+                round(time.time() - start, 2)
+            )
         )
-    )
     
-
-
-# In[10]:
-
+lets_battle(tests)
 
 if use_neptune: run.stop()
-
-
-# In[ ]:
-
-
-
-
-
-# In[1]:
 
 
 import os
@@ -467,8 +393,6 @@ import re
 from datetime import date
 today = date.today()
 
-
-# In[12]:
 
 
 # helper function: save to json file
@@ -490,8 +414,6 @@ def save_to_json(path, params, name, value):
     file.close()
 
 
-# In[13]:
-
 
 # Saving Q and N to json files
 for params in tests:
@@ -499,15 +421,8 @@ for params in tests:
     save_to_json("./dump", params, "N", params['player'].N)
 
 
-# In[ ]:
 
-
-
-
-
-# In[14]:
-
-
+# Definition of Monte Carlo validation player
 class ValidationPlayer(PlayerMC):
     def __init__(self, battle_format, team, Q, N, n0):
         super().__init__(battle_format=battle_format, team=team)
@@ -564,7 +479,6 @@ class ValidationPlayer(PlayerMC):
         )
         
         state = list()
-        #active_pokemon = [mon for mon in battle.team.values() if mon._active]   
         state.append('{0:.2f}'.format(name_to_id(str(battle.active_pokemon).split(' ')[0])))
         state.append('{0:.2f}'.format(name_to_id(str(battle.opponent_active_pokemon).split(' ')[0])))    
         for move_base_power in moves_base_power:
@@ -583,9 +497,9 @@ class ValidationPlayer(PlayerMC):
 # Get values from json files
 
 Qarray = []
-directoryQ = r'S:\poke_env\dump\211104_MCControl_Det\qvalues'
+directoryQ = r'path\211104_MCControl_Det\qvalues'
 Narray = []
-directoryN = r'S:\poke_env\dump\211104_MCControl_Det\nvalues'
+directoryN = r'path\211104_MCControl_Det\nvalues'
 for filenameQ in os.listdir(directoryQ):
     Qjson_file = open(directoryQ+'/'+filenameQ,)
     Qjson = json.load(Qjson_file)
@@ -602,66 +516,54 @@ for filenameN in os.listdir(directoryN):
     
 
 
-# In[18]:
-
-
 # Validate with values from json - vs RandomPlayer
-for test, qvalue, nvalue in zip(tests, Qarray, Narray):
-    start = time.time()
-    test['opponent'] = RandomPlayer(battle_format="gen8ou", team=test['against'])
-    test['player_val'] = ValidationPlayer(battle_format="gen8ou", team=test['team'], Q=qvalue, N=nvalue, n0=test['n0'])
-    await test['player_val'].battle_against(test['opponent'], n_battles=int(test['n_battles']/3))
-    
-    print(
-        "Player with N0=%f and gamma=%f won %d / %d battles [this is %f percent and took %f seconds]"
-        % (
-            round(test['n0'], 8),
-            round(test['gamma'], 8),
-            test['player_val'].n_won_battles,
-            int(test['n_battles']/3),
-            round(test['player_val'].n_won_battles/int(test['n_battles']/3), 2),
-            round(time.time() - start, 2)
+async def do_battle_validation_params(params):
+    for test, qvalue, nvalue in params:
+        start = time.time()
+        test['opponent'] = RandomPlayer(battle_format="gen8ou", team=test['against'])
+        test['player_val'] = ValidationPlayer(battle_format="gen8ou", team=test['team'], Q=qvalue, N=nvalue, n0=test['n0'])
+        await test['player_val'].battle_against(test['opponent'], n_battles=int(test['n_battles']/3))
+        
+        print(
+            "Player with N0=%f and gamma=%f won %d / %d battles [this is %f percent and took %f seconds]"
+            % (
+                round(test['n0'], 8),
+                round(test['gamma'], 8),
+                test['player_val'].n_won_battles,
+                int(test['n_battles']/3),
+                round(test['player_val'].n_won_battles/int(test['n_battles']/3), 2),
+                round(time.time() - start, 2)
+            )
         )
-    )
 
-
-# In[20]:
-
+do_battle_validation_params(zip(tests, Qarray, Narray))
 
 # Validate with values from json - vs MaxPlayer
-for test, qvalue, nvalue in zip(tests, Qarray, Narray):
-    start = time.time()
-    test['opponent'] = MaxDamagePlayer(battle_format="gen8ou", team=test['against'])
-    test['player_val'] = ValidationPlayer(battle_format="gen8ou", team=test['team'], Q=qvalue, N=nvalue, n0=test['n0'])
-    await test['player_val'].battle_against(test['opponent'], n_battles=int(test['n_battles']/3))
-    
-    print(
-        "Player with N0=%f and gamma=%f won %d / %d battles [this is %f percent and took %f seconds]"
-        % (
-            round(test['n0'], 8),
-            round(test['gamma'], 8),
-            test['player_val'].n_won_battles,
-            int(test['n_battles']/1000),
-            round(test['player_val'].n_won_battles/int(test['n_battles']/3), 2),
-            round(time.time() - start, 2)
+async def do_battle_validation_params_max(params):
+    for test, qvalue, nvalue in params:
+        start = time.time()
+        test['opponent'] = MaxDamagePlayer(battle_format="gen8ou", team=test['against'])
+        test['player_val'] = ValidationPlayer(battle_format="gen8ou", team=test['team'], Q=qvalue, N=nvalue, n0=test['n0'])
+        await test['player_val'].battle_against(test['opponent'], n_battles=int(test['n_battles']/3))
+        
+        print(
+            "Player with N0=%f and gamma=%f won %d / %d battles [this is %f percent and took %f seconds]"
+            % (
+                round(test['n0'], 8),
+                round(test['gamma'], 8),
+                test['player_val'].n_won_battles,
+                int(test['n_battles']/1000),
+                round(test['player_val'].n_won_battles/int(test['n_battles']/3), 2),
+                round(time.time() - start, 2)
+            )
         )
-    )
 
-
-# In[ ]:
-
+do_battle_validation_params_max(zip(tests, Qarray, Narray))
 
 # state is 4 moves_base_power, 4 moves_dmg_multiplier, [remaining_mon_team, remaining_mon_opponent]
 # 3D graph: X: sum(moves_base_power * moves_dmg_multiplier), Y: remaining_mon_team - remaining_mon_opponent
 
-
-# In[3]:
-
-
 output_folder = "images/vfunction"
-
-
-# In[4]:
 
 
 # Data for plotting: Create value function from action-value function
@@ -672,7 +574,7 @@ output_folder = "images/vfunction"
 # z: value function
 
 v_array = []
-directoryQ = r'S:\poke_env\dump\211104_MCControl_Det\qvalues'
+directoryQ = r'path\211104_MCControl_Det\qvalues'
 
 for filenameQ in os.listdir(directoryQ):
     Qjson_file = open(directoryQ+'/'+filenameQ,)
@@ -684,7 +586,6 @@ for filenameQ in os.listdir(directoryQ):
     z_values = []
     x_values = []
     y_values = []
-    #for state, actions in test['player_val'].Q.items():
     for state, actions in Qjson.items():    
         action_value = np.max(actions)
         z_values.append(action_value)
@@ -694,11 +595,7 @@ for filenameQ in os.listdir(directoryQ):
         x_values.append(x_emb)
         y_emb = key_float[8]-key_float[9]
         y_values.append(y_emb)
-        #V[x_emb,y_emb] = action_value
     v_array.append((x_values, y_values, z_values))
-
-
-# In[5]:
 
 
 # x: index_pokemon*20+sum(moves_base_power * moves_dmg_multiplier)
@@ -737,17 +634,13 @@ for vvalue, filenameQ in zip(v_array, os.listdir(directoryQ)):
     plt.savefig(path_plot+filename) 
     plt.show()
 
-
-# In[14]:
-
-
 # x: sum(moves_base_power * moves_dmg_multiplier)
 # y: remaining_mon_team - remaining_mon_opponent
 # z: value function
 
 
 v_array = []
-directoryQ = r'S:\poke_env\dump\211104_MCControl_Det\qvalues'
+directoryQ = r'path\211104_MCControl_Det\qvalues'
 
 for filenameQ in os.listdir(directoryQ):
     Qjson_file = open(directoryQ+'/'+filenameQ,)
@@ -769,11 +662,8 @@ for filenameQ in os.listdir(directoryQ):
         x_values.append(x_emb)
         y_emb = key_float[8]-key_float[9]
         y_values.append(y_emb)
-        #V[x_emb,y_emb] = action_value
     v_array.append((x_values, y_values, z_values))
 
-
-# In[15]:
 
 
 # x: sum(moves_base_power * moves_dmg_multiplier)
@@ -813,15 +703,12 @@ for vvalue, filenameQ in zip(v_array, os.listdir(directoryQ)):
     plt.show()
 
 
-# In[16]:
-
-
 # x: (remaining_mon_team - remaining_mon_opponent)*sum(moves_base_power * moves_dmg_multiplier)
 # y: action
 # z: value function
 
 v_array = []
-directoryQ = r'S:\poke_env\dump\211104_MCControl_Det\qvalues'
+directoryQ = r'path\211104_MCControl_Det\qvalues'
 
 for filenameQ in os.listdir(directoryQ):
     Qjson_file = open(directoryQ+'/'+filenameQ,)
@@ -843,11 +730,7 @@ for filenameQ in os.listdir(directoryQ):
         x_values.append(x_emb)
         y_emb = np.argmax(actions)
         y_values.append(y_emb)
-        #V[x_emb,y_emb] = action_value
     v_array.append((x_values, y_values, z_values))
-
-
-# In[17]:
 
 
 # x: (remaining_mon_team - remaining_mon_opponent)*sum(moves_base_power * moves_dmg_multiplier)
@@ -885,124 +768,3 @@ for vvalue, filenameQ in zip(v_array, os.listdir(directoryQ)):
         os.makedirs(path_plot)
     plt.savefig(path_plot+filename)     
     plt.show()    
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
