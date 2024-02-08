@@ -1,8 +1,8 @@
-#!/usr/bin/env python
-# coding: utf-8
+# Code for training and testing a Player in Pokemon Showdown using SARSA(lambda) in Deterministic Environment
 
-# In[1]:
-
+# Comparative Table: https://prnt.sc/1ytqrzm
+# Action space: 4 moves + 5 switches
+# poke-env installed in C:\\Users\\-\\anaconda3\\envs\\poke_env\\lib\\site-packages
 
 # imports
 
@@ -25,12 +25,8 @@ from matplotlib import pyplot
 from poke_env.environment.abstract_battle import AbstractBattle
 from poke_env.player.battle_order import ForfeitBattleOrder
 from poke_env.player.player import Player
-# from poke_env.player.random_player import RandomPlayer
 from scipy.interpolate import griddata
 from src.playerMC import Player as PlayerSarsa
-
-
-# In[2]:
 
 
 # global configs
@@ -45,16 +41,11 @@ np.random.seed(0)
 
 use_neptune = True
 if use_neptune:
-    run = neptune.init(project='leolellisr/rl-pokeenv',
-                       api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI1NjY1YmJkZi1hYmM5LTQ3M2QtOGU1ZC1iZTFlNWY4NjE1NDQifQ==',
-                       name= 'SarsaDeterministic', tags=['Bruno', 'Sarsa', 'Deterministic', 'Train'])
+    run = neptune.init(project='your_project_here',
+                       api_token='your api token here==',
+                       name= 'SarsaDeterministic', tags=['Sarsa', 'Deterministic', 'Train'])
 
-
-# In[3]:
-
-
-# our team
-
+# Definition of the agent team (Pokémon Showdown template)
 OUR_TEAM = """
 Turtonator @ White Herb  
 Ability: Shell Armor  
@@ -114,11 +105,7 @@ Adamant Nature
 """
 
 
-# In[4]:
-
-
-# opponent's team
-
+# Definition of the opponent team (Pokémon Showdown template)
 OP_TEAM = """
 Cloyster @ Assault Vest  
 Ability: Shell Armor  
@@ -178,15 +165,13 @@ Adamant Nature
 """
 
 
-# In[5]:
-
-
 N_OUR_MOVE_ACTIONS = 4
 N_OUR_SWITCH_ACTIONS = 5
 N_OUR_ACTIONS = N_OUR_MOVE_ACTIONS + N_OUR_SWITCH_ACTIONS
 
 ALL_OUR_ACTIONS = np.array(range(0, N_OUR_ACTIONS))
 
+# Encoding Pokémon Name for ID
 NAME_TO_ID_DICT = {
     "turtonator": 0,
     "lapras": 1,
@@ -203,11 +188,7 @@ NAME_TO_ID_DICT = {
 }
 
 
-# In[6]:
-
-
-# Max-damage player
-
+# Definition of MaxDamagePlayer
 class MaxDamagePlayer(Player):
     def choose_move(self, battle):
         if battle.available_moves:
@@ -217,10 +198,7 @@ class MaxDamagePlayer(Player):
             return self.choose_random_move(battle)
 
 
-# In[7]:
-
-
-# SARSA player
+# Definition of SARSA player
 class SARSAPlayer(PlayerSarsa):
     def __init__(self, battle_format, team, n0, gamma, lambda_):
         super().__init__(battle_format=battle_format, team=team)
@@ -393,10 +371,7 @@ class SARSAPlayer(PlayerSarsa):
         return self.reward_computing_helper(battle, fainted_value=2, hp_value=1, victory_value=15)
 
 
-# In[8]:
-
-
-# validation player
+# Definition of sarsa validation player
 class SARSAValidationPlayer(PlayerSarsa):
     def __init__(self, battle_format, team, Q):
         super().__init__(battle_format=battle_format, team=team)
@@ -462,9 +437,6 @@ class SARSAValidationPlayer(PlayerSarsa):
         return str(state)
 
 
-# In[9]:
-
-
 # global parameters
 
 # possible values for num_battles (number of episodes)
@@ -484,9 +456,6 @@ list_of_params = [
         'lambda': lambda_
     } for n_battles, n0, gamma, lambda_ in product(n_battles_array, n0_array, gamma_array, lambda_)
 ]
-
-
-# In[10]:
 
 
 # json helper functions
@@ -519,9 +488,6 @@ def read_dict_from_json(path_dir, filename):
     data = json.load(file)
     file.close()
     return data
-
-
-# In[11]:
 
 
 # let's battle!
@@ -570,47 +536,26 @@ async def lets_battle():
         save_dict_to_json("./statistics", "statistics.json", data)
 
 
-# In[12]:
-
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(loop.create_task(lets_battle()))
 
 
-# In[13]:
 
 
 if use_neptune: run.stop()
 
 
-# In[14]:
 
 
 
 
-
-# In[ ]:
-
-
-
-
-
-# In[16]:
-
-
-
-
-
-# In[ ]:
-
-
-# validation maxplayer
+# validation vs maxplayer
 
 async def do_battle_validation():
     for params in list_of_params:
         # validation (play 1/3 of the battles using Q-learned table)
         start = time.time()
-        #params['player'] = SARSAPlayer(battle_format="gen8ou", team=OUR_TEAM, n0=params['n0'], gamma=params['gamma'], lambda_ = params['lambda'])
         params['opponent'] = MaxDamagePlayer(battle_format="gen8ou", team=OP_TEAM)
         params['validation_player'] = SARSAValidationPlayer(battle_format="gen8ou", team=OUR_TEAM, Q=params['player'].Q)
         n_battles = int(params['n_battles'] / 5)
@@ -630,10 +575,8 @@ loop = asyncio.get_event_loop()
 loop.run_until_complete(loop.create_task(do_battle_validation()))
 
 
-# In[ ]:
 
-
-# validation random
+# validation vs random
 from poke_env.player.player import Player
 from poke_env.player.random_player import RandomPlayer
 
@@ -642,7 +585,6 @@ async def do_battle_validation():
     for params in list_of_params:
         # validation (play 1/3 of the battles using Q-learned table)
         start = time.time()
-        #params['player'] = SARSAPlayer(battle_format="gen8ou", team=OUR_TEAM, n0=params['n0'], gamma=params['gamma'], lambda_ = params['lambda'])
         params['opponent'] = RandomPlayer(battle_format="gen8ou", team=OUR_TEAM)
         params['validation_player'] = SARSAValidationPlayer(battle_format="gen8ou", team=OUR_TEAM, Q=params['player'].Q)
         n_battles = int(params['n_battles'] / 3)
@@ -662,8 +604,6 @@ loop = asyncio.get_event_loop()
 loop.run_until_complete(loop.create_task(do_battle_validation()))
 
 
-# In[ ]:
-
 
 import os
 import json
@@ -672,13 +612,10 @@ from datetime import date
 today = date.today()
 
 
-# In[ ]:
 
 
 output_folder = "images/vfunction"
 
-
-# In[ ]:
 
 
 # x: index_pokemon*20+sum(moves_base_power * moves_dmg_multiplier)
@@ -686,7 +623,7 @@ output_folder = "images/vfunction"
 # z: value function
 
 v_array = []
-directoryQ = r'S:\poke_env\dump\Deterministico_Sarsa\Deterministico_Sarsa\SarsaLambda10k_Table_determ\best3'
+directoryQ = r'path\SarsaLambda10k_Table_determ\best3'
 
 for filenameQ in os.listdir(directoryQ):
     Qjson_file = open(directoryQ+'/'+filenameQ,)
@@ -698,7 +635,6 @@ for filenameQ in os.listdir(directoryQ):
     z_values = []
     x_values = []
     y_values = []
-    #for state, actions in test['player_val'].Q.items():
     for state, actions in Qjson.items():    
         action_value = np.max(actions)
         z_values.append(action_value)
@@ -708,11 +644,10 @@ for filenameQ in os.listdir(directoryQ):
         x_values.append(x_emb)
         y_emb = key_float[8]-key_float[9]
         y_values.append(y_emb)
-        #V[x_emb,y_emb] = action_value
     v_array.append((x_values, y_values, z_values))
 
 
-# In[ ]:
+
 
 
 # x: index_pokemon*20+sum(moves_base_power * moves_dmg_multiplier)
@@ -753,8 +688,6 @@ for vvalue, filenameQ in zip(v_array, os.listdir(directoryQ)):
     plt.show()
 
 
-# In[ ]:
-
 
 # x: (remaining_mon_team - remaining_mon_opponent)*sum(moves_base_power * moves_dmg_multiplier)
 # y: action
@@ -762,7 +695,7 @@ for vvalue, filenameQ in zip(v_array, os.listdir(directoryQ)):
 
 v_array = []
 #for test in tests:
-directoryQ = r'S:\poke_env\dump\Deterministico_Sarsa\Deterministico_Sarsa\SarsaLambda10k_Table_determ\best3'
+directoryQ = r'path\SarsaLambda10k_Table_determ\best3'
 
 for filenameQ in os.listdir(directoryQ):
     Qjson_file = open(directoryQ+'/'+filenameQ,)
@@ -787,8 +720,6 @@ for filenameQ in os.listdir(directoryQ):
         #V[x_emb,y_emb] = action_value
     v_array.append((x_values, y_values, z_values))
 
-
-# In[ ]:
 
 
 import pandas as pd

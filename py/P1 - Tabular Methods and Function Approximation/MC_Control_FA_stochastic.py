@@ -1,8 +1,8 @@
-#!/usr/bin/env python
-# coding: utf-8
+# Notebook for training and testing a Player in Pokemon Showdown using Monte Carlo with Function Approximation in Stochastic Environment
 
-# In[1]:
-
+# Comparative Table: https://prnt.sc/1ytqrzm
+# Action space: 4 moves + 5 switches
+# poke-env installed in C:\\Users\\-\\anaconda3\\envs\\poke_env\\lib\\site-packages
 
 # imports
 
@@ -28,28 +28,22 @@ from scipy.interpolate import griddata
 from src.playerMC_FA import Player as PlayerMC_FA
 
 
-# In[2]:
-
-
 # global configs
 
 debug = True
 save_to_json_file = False
 use_validation = True
-use_neptune = True
+use_neptune = False
 
 nest_asyncio.apply()
 np.random.seed(0)
 
 if use_neptune:
-    run = neptune.init(name= 'MCControlFAStochastic', tags=['Function Approximation', 'MC Control', 'Stochastic', 'Train'], project='leolellisr/rl-pokeenv',
-                       api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI1NjY1YmJkZi1hYmM5LTQ3M2QtOGU1ZC1iZTFlNWY4NjE1NDQifQ==')
+    run = neptune.init(name= 'MCControlFAStochastic', tags=['Function Approximation', 'MC Control', 'Stochastic', 'Train'], project='your project',
+                       api_token='your api token')
 
 
-# In[3]:
-
-
-# our team
+# Definition of agent's team (Pokémon Showdown template)
 
 OUR_TEAM = """
 Pikachu-Original (M) @ Light Ball  
@@ -109,11 +103,7 @@ Jolly Nature
 - Iron Head  
 """
 
-
-# In[4]:
-
-
-# opponent's team
+# Definition of opponent's team (Pokémon Showdown template)
 
 OP_TEAM = """
 Eevee @ Eviolite  
@@ -175,9 +165,6 @@ Careful Nature
 """
 
 
-# In[5]:
-
-
 N_STATE_COMPONENTS = 12
 # num of features = num of state components + action
 N_FEATURES = N_STATE_COMPONENTS + 1
@@ -188,6 +175,7 @@ N_OUR_ACTIONS = N_OUR_MOVE_ACTIONS + N_OUR_SWITCH_ACTIONS
 
 ALL_OUR_ACTIONS = np.array(range(0, N_OUR_ACTIONS))
 
+# Encoding Pokémon Name for ID
 def name_to_id(name):
     if(name == 'venusaur'): return 0
     if(name == 'pikachuoriginal'): return 1 
@@ -203,11 +191,7 @@ def name_to_id(name):
     if(name == 'umbreon'): return 5     
 
 
-# In[6]:
-
-
-# Max-damage player
-
+# Definition of MaxDamagePlayer
 class MaxDamagePlayer(Player):
     def choose_move(self, battle):
         if battle.available_moves:
@@ -216,12 +200,7 @@ class MaxDamagePlayer(Player):
         else:
             return self.choose_random_move(battle)
 
-
-# In[7]:
-
-
-# MC Control FA player
-
+# Definition of Monte Carlo with Function Approximation Player
 class MCPlayer(PlayerMC_FA):
     def choose_move(self, battle):
         # In the 1st state of all we don't append yet;
@@ -390,12 +369,7 @@ class MCPlayer(PlayerMC_FA):
     def compute_reward(self, battle) -> float:
         return self.reward_computing_helper(battle, fainted_value=2, hp_value=1, victory_value=15)
 
-
-# In[8]:
-
-
-# validation player
-
+# Definition of Monte Carlo with function approximation validation player
 class ValidationPlayer(PlayerMC_FA):
     def __init__(self, battle_format, team, w, N, n0):
         super().__init__(battle_format=battle_format, team=team)
@@ -467,7 +441,6 @@ class ValidationPlayer(PlayerMC_FA):
         )
         
         state = list()
-        #active_pokemon = [mon for mon in battle.team.values() if mon._active]   
         state.append('{0:.2f}'.format(name_to_id(str(battle.active_pokemon).split(' ')[0])))
         state.append('{0:.2f}'.format(name_to_id(str(battle.opponent_active_pokemon).split(' ')[0])))    
         for move_base_power in moves_base_power:
@@ -480,10 +453,6 @@ class ValidationPlayer(PlayerMC_FA):
         return state
     
     
-
-
-# In[9]:
-
 
 # global parameters
 
@@ -503,15 +472,6 @@ list_of_params = [
         'gamma': gamma
     } for n_battles, n0, gamma in product(n_battles_array, n0_array, gamma_array)
 ]
-
-
-# In[ ]:
-
-
-
-
-
-# In[10]:
 
 
 # json helper functions
@@ -559,10 +519,6 @@ def read_dict_from_json(path_dir, filename):
     file.close()
     return data
 
-
-# In[11]:
-
-
 # main (let's battle!)
 
 # training
@@ -596,7 +552,6 @@ async def do_battle_training():
             
             filename = "N_" + today_s + "_" + n_battle_s + "_" + n0_s + "_" + gamma_s + "_" + winning_percentage_s+".json"           
             save_dict_to_json("./MC_Control_FA_N", filename, params['player'].N)
-        # statistics: key: "n_battles, n0, alpha, gamma", values: list of win or lose
         key = str(params['n_battles']) + "_" + str(round(params['n0'], 4)) + "_" + str(round(params['gamma'], 2))
         winning_status = list()
         for battle in params['player']._battles.values():
@@ -614,37 +569,6 @@ loop = asyncio.get_event_loop()
 loop.run_until_complete(loop.create_task(do_battle_training()))
 
 
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
 
 
 # validation  - vs MaxPlayer
@@ -681,9 +605,6 @@ if use_validation:
     loop.run_until_complete(loop.create_task(do_battle_validation_params(list_of_params)))
 
 
-# In[ ]:
-
-
 # validation - vs RandomPlayer
 
 async def do_battle_validation_params(params):
@@ -716,10 +637,5 @@ async def do_battle_validation_params(params):
 if use_validation:
     loop = asyncio.get_event_loop()
     loop.run_until_complete(loop.create_task(do_battle_validation_params(list_of_params)))
-
-
-# In[ ]:
-
-
 
 

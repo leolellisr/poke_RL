@@ -1,3 +1,5 @@
+# Base torch classes for training and testing with REINFORCE 
+
 import sys
 import math
 import numpy
@@ -12,6 +14,7 @@ import torchvision.transforms as T
 from torch.autograd import Variable
 import pdb
 
+# Policy class
 class Policy(nn.Module):
     def __init__(self, hidden_size, num_inputs, action_space):
         super(Policy, self).__init__()
@@ -27,7 +30,7 @@ class Policy(nn.Module):
         action_scores = self.linear2(x)
         return action_scores
 
-
+# REINFORCE agent
 class REINFORCE:
     def __init__(self, hidden_size, num_inputs, action_space, lr):
         self.action_space = action_space

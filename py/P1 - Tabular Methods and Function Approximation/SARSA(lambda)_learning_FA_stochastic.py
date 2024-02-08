@@ -1,8 +1,8 @@
-#!/usr/bin/env python
-# coding: utf-8
+# Code for training and testing a Player in Pokemon Showdown using SARSA(lambda) with Function Approximation in Stochastic Environment
 
-# In[48]:
-
+# Comparative Table: https://prnt.sc/1ytqrzm
+# Action space: 4 moves + 5 switches
+# poke-env installed in C:\\Users\\-\\anaconda3\\envs\\poke_env\\lib\\site-packages
 
 # imports
 
@@ -25,18 +25,14 @@ from matplotlib import pyplot
 from poke_env.environment.abstract_battle import AbstractBattle
 from poke_env.player.battle_order import ForfeitBattleOrder
 from poke_env.player.player import Player
-# from poke_env.player.random_player import RandomPlayer
 from scipy.interpolate import griddata
 from src.PlayerQLearning import Player as PlayerSarsa
 
-use_neptune = True
+use_neptune = False
 if use_neptune:
-    run = neptune.init(project='leolellisr/rl-pokeenv',
-                       api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI1NjY1YmJkZi1hYmM5LTQ3M2QtOGU1ZC1iZTFlNWY4NjE1NDQifQ==',
-                       name= 'SarsaDeterministic', tags=['Bruno', 'SarsaFA', 'Stocastic', 'Train'])
-
-
-# In[2]:
+    run = neptune.init(project='your_project',
+                       api_token='your_api_token==',
+                       name= 'SarsaDeterministic', tags=['SarsaFA', 'Stocastic', 'Train'])
 
 
 # global configs
@@ -49,10 +45,7 @@ nest_asyncio.apply()
 np.random.seed(0)
 
 
-# In[49]:
-
-
-# our team
+# Definition of agent's team (Pokémon Showdown template)
 
 OUR_TEAM = """
 Pikachu-Original (M) @ Light Ball  
@@ -113,10 +106,7 @@ Jolly Nature
 """
 
 
-# In[50]:
-
-
-# opponent's team
+# Definition of opponent's team (Pokémon Showdown template)
 
 OP_TEAM = """
 Eevee @ Eviolite  
@@ -178,8 +168,6 @@ Careful Nature
 """
 
 
-# In[51]:
-
 
 N_STATE_COMPONENTS = 12
 # num of features = num of state components + action
@@ -191,6 +179,7 @@ N_OUR_ACTIONS = N_OUR_MOVE_ACTIONS + N_OUR_SWITCH_ACTIONS
 
 ALL_OUR_ACTIONS = np.array(range(0, N_OUR_ACTIONS))
 
+# Encoding Pokémon Name for ID
 NAME_TO_ID_DICT = {
     "pikachuoriginal": 0,
     "charizard": 1,
@@ -207,11 +196,7 @@ NAME_TO_ID_DICT = {
 }
 
 
-# In[6]:
-
-
-# Max-damage player
-
+# Definition of Max-damage player
 class MaxDamagePlayer(Player):
     def choose_move(self, battle):
         if battle.available_moves:
@@ -221,11 +206,7 @@ class MaxDamagePlayer(Player):
             return self.choose_random_move(battle)
 
 
-# In[52]:
-
-
-# SARSA player
-
+# Definition of SARSA with Function Approximation player
 class SARSAFAPlayer(PlayerSarsa):
     def __init__(self, battle_format, team, n0, gamma, lambda_):
         super().__init__(battle_format=battle_format, team=team)
@@ -404,11 +385,7 @@ class SARSAFAPlayer(PlayerSarsa):
         return self.reward_computing_helper(battle, fainted_value=2, hp_value=1, victory_value=15)
 
 
-# In[53]:
-
-
-# sarsa V player
-
+# Definition of SARSA with function approximation validation player
 class ValidationPlayer(PlayerSarsa):
     def __init__(self, battle_format, team, w):
         super().__init__(battle_format=battle_format, team=team)
@@ -419,7 +396,6 @@ class ValidationPlayer(PlayerSarsa):
         # let's get the greedy action. Ties must be broken arbitrarily
         q_approx = np.array([self.q_approx(state, action, self.w) for action in range(N_OUR_ACTIONS)])
         action = np.argmax(q_approx)
-        #action = np.argmax(np.where(q_approx == q_approx.max())[0])
 
         # if the selected action is not possible, perform a random move instead
         if action == -1:
@@ -486,9 +462,6 @@ class ValidationPlayer(PlayerSarsa):
         return state
 
 
-# In[35]:
-
-
 # global parameters
 
 # possible values for num_battles (number of episodes)
@@ -510,10 +483,6 @@ list_of_params = [
 ]
 
 
-# In[10]:
-
-
-# json helper functions
 # json helper functions
 
 def save_array_to_json(path_dir, filename, data):
@@ -566,9 +535,6 @@ def read_dict_from_json(path_dir, filename):
     return data
 
 
-# In[11]:
-
-
 # let's battle!
 async def lets_battle():
     for params in list_of_params:
@@ -615,23 +581,15 @@ async def lets_battle():
         save_dict_to_json("./Sarsa_Learning_FA_statistics", "statistics.json", data)
 
 
-# In[12]:
-
-
 loop = asyncio.get_event_loop()
 loop.run_until_complete(loop.create_task(lets_battle()))
-
-
-# In[ ]:
 
 
 if use_neptune: run.stop()
 
 
-# In[46]:
 
-
-# validation max player
+# validation vs max player
 
 async def do_battle_validation(path_dir):
     # read from json
@@ -645,7 +603,7 @@ async def do_battle_validation(path_dir):
         gamma = float(params[4])
         lambda_ = float(params[5])
 
-        # validation (play 1/3 of the battles using Q-learned table)
+        # validation (play 1/3 of the battles)
         start = time.time()
         validation_player = ValidationPlayer(battle_format="gen8ou", team=OUR_TEAM, w=w)
         opponent = MaxDamagePlayer(battle_format="gen8ou", team=OP_TEAM)
@@ -663,17 +621,13 @@ async def do_battle_validation(path_dir):
               ))
 
 
-# In[ ]:
-
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(loop.create_task(do_battle_validation("./Sarsa_FA_w_10k")))
 
 
-# In[54]:
 
-
-# validation random
+# validation vs random
 
 from poke_env.player.player import Player
 from poke_env.player.random_player import RandomPlayer
@@ -690,7 +644,7 @@ async def do_battle_validation(path_dir):
         gamma = float(params[4])
         lambda_ = float(params[5])
 
-        # validation (play 1/3 of the battles using Q-learned table)
+        # validation (play 1/3 of the battles)
         start = time.time()
         validation_player = ValidationPlayer(battle_format="gen8ou", team=OUR_TEAM, w=w)
         opponent = RandomPlayer(battle_format="gen8ou", team=OUR_TEAM)
@@ -706,9 +660,6 @@ async def do_battle_validation(path_dir):
                   round((validation_player.n_won_battles / n_battles_validation) * 100, 2),
                   round(time.time() - start, 2)
               ))
-
-
-# In[ ]:
 
 
 loop = asyncio.get_event_loop()

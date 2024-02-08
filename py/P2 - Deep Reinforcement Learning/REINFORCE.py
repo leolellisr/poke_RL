@@ -1,3 +1,5 @@
+# Code for training and testing with REINFORCE in Pokémon Showdown
+
 import argparse
 import asyncio
 import os
@@ -14,6 +16,7 @@ from poke_env.player.random_player import RandomPlayer
 
 from REINFORCEAgent import REINFORCEAgent
 
+# Definition of the agent stochastic team (Pokémon Showdown template)
 OUR_TEAM = """ 
 Pikachu-Original (M) @ Light Ball  
 Ability: Static  
@@ -72,6 +75,7 @@ Adamant Nature
 - Iron Head  
 """
 
+# Definition of the opponent stochastic team (Pokémon Showdown template)
 OP_TEAM = """
 Eevee @ Eviolite  
 Ability: Adaptability  
@@ -131,6 +135,7 @@ Careful Nature
 - Wish  
 """
 
+# Encoding stochastic Pokémon Name for ID
 NAME_TO_ID_DICT = {
     "pikachuoriginal": 0,
     "charizard": 1,
@@ -146,6 +151,7 @@ NAME_TO_ID_DICT = {
     "umbreon": 5
 }
 
+# Definition of the agent deterministic team (Pokémon Showdown template)
 OUR_TEAM_DET = """
 Turtonator @ White Herb  
 Ability: Shell Armor  
@@ -203,6 +209,8 @@ Adamant Nature
 - No Retreat  
 
 """
+
+# Definition of the opponent deterministic team (Pokémon Showdown template)
 OP_TEAM_DET = """
 Cloyster @ Assault Vest  
 Ability: Shell Armor  
@@ -261,6 +269,7 @@ Adamant Nature
 
 """
 
+# Encoding deterministic Pokémon Name for ID
 NAME_TO_ID_DICT_DET = {
     "turtonator": 0,
     "lapras": 1,
@@ -313,7 +322,7 @@ def parse_args():
 nest_asyncio.apply()
 np.random.seed(0)
 
-
+# Definition of REINFORCE player
 class MCPlayer(Gen8EnvSinglePlayer):
     def __init__(self, battle_format, team, agent):
         super().__init__(battle_format=battle_format, team=team)
@@ -437,7 +446,7 @@ class MCPlayer(Gen8EnvSinglePlayer):
             run[f'{"train"} win_acc'].log(self.n_won_battles / self.num_battles)
         self.agent.fit()
 
-
+# Definition of MaxDamagePlayer
 class MaxDamagePlayer(RandomPlayer):
     def choose_move(self, battle):
         # If the player can attack, it will
@@ -449,7 +458,7 @@ class MaxDamagePlayer(RandomPlayer):
         else:
             return self.choose_random_move(battle)
 
-
+# Definition of REINFORCE validation player
 class ValidationPlayer(Gen8EnvSinglePlayer):
     def __init__(self, battle_format, team, agent, env_player_mode):
         super().__init__(battle_format=battle_format, team=team)
@@ -567,13 +576,14 @@ class ValidationPlayer(Gen8EnvSinglePlayer):
 tf.random.set_seed(0)
 np.random.seed(0)
 
+# Main program
 if __name__ == "__main__":
 
     args = parse_args()
 
     if args.neptune:
-        run = neptune.init(project='leolellisr/rl-pokeenv',
-                           api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI1NjY1YmJkZi1hYmM5LTQ3M2QtOGU1ZC1iZTFlNWY4NjE1NDQifQ==',
+        run = neptune.init(project='your_project',
+                           api_token='your_api_token==',
                            tags=["REINFORCE", args.exp_name, args.env, str(args.battles) + "episodes"])
 
     # environment: stochastic or deterministic

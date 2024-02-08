@@ -173,22 +173,10 @@ class Player(PlayerNetwork, ABC):
         """
         
         def policy_fn(observation):
-            #print(observations)
-            #print(len(observations))
-            #arr_observations = observations.split()
-            #for observation in arr_observations:
-                #print(observation)
-            #print("update police")   
-            #print("Function") 
             dim = Q[observation].shape
-            #print("dim: ", dim)
             greedy_action = np.argmax(Q[observation])
-            #print("greedy: ", greedy_action)
             probs = np.full(dim, (epsilon/(epsilon+np.sum(N[observation]))) / dim[0])
-            #print("probs 1: ", probs)
-            #print("step greed: ", 1 - (epsilon/(epsilon+np.sum(N[observation]))))
             probs[greedy_action] += 1 - (epsilon/(epsilon+np.sum(N[observation]))) 
-            #print("probs 2: ", probs)
             return probs
 
         return policy_fn
