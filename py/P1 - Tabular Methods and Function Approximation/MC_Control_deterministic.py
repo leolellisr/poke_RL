@@ -27,6 +27,23 @@ from collections import namedtuple
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+
+import pandas as pd
+from scipy.interpolate import griddata
+
+from poke_env.player_configuration import PlayerConfiguration
+from poke_env.server_configuration import ShowdownServerConfiguration
+from poke_env.environment.pokemon_type import PokemonType
+from poke_env.environment.move import Move
+from poke_env.environment.pokemon import Pokemon
+from poke_env.environment.side_condition import SideCondition
+from poke_env.environment.status import Status
+from poke_env.environment.weather import Weather
+from poke_env.environment.field import Field
+from poke_env.environment.battle import Battle
+from poke_env.environment.move_category import MoveCategory
+from poke_env.environment.pokemon
+
 np.random.seed(0)
 use_neptune = False
 if use_neptune:
@@ -491,15 +508,12 @@ class ValidationPlayer(PlayerMC):
         return str(state)
 
 
-# In[15]:
-
-
 # Get values from json files
 
 Qarray = []
-directoryQ = r'path\211104_MCControl_Det\qvalues'
+directoryQ = r'path/211104_MCControl_Det/qvalues'
 Narray = []
-directoryN = r'path\211104_MCControl_Det\nvalues'
+directoryN = r'path/211104_MCControl_Det/nvalues'
 for filenameQ in os.listdir(directoryQ):
     Qjson_file = open(directoryQ+'/'+filenameQ,)
     Qjson = json.load(Qjson_file)
@@ -514,7 +528,6 @@ for filenameN in os.listdir(directoryN):
         Njson[key] = np.array(Njson[key])
     Narray.append(Njson)
     
-
 
 # Validate with values from json - vs RandomPlayer
 async def do_battle_validation_params(params):
@@ -574,7 +587,7 @@ output_folder = "images/vfunction"
 # z: value function
 
 v_array = []
-directoryQ = r'path\211104_MCControl_Det\qvalues'
+directoryQ = r"path/211104_MCControl_Det/qvalues"
 
 for filenameQ in os.listdir(directoryQ):
     Qjson_file = open(directoryQ+'/'+filenameQ,)
@@ -602,8 +615,6 @@ for filenameQ in os.listdir(directoryQ):
 # y: remaining_mon_team - remaining_mon_opponent
 # z: value function
 
-import pandas as pd
-from scipy.interpolate import griddata
 for vvalue, filenameQ in zip(v_array, os.listdir(directoryQ)):
     print(filenameQ.split('.')[0])
     x_values, y_values, z_values = vvalue 
@@ -640,7 +651,7 @@ for vvalue, filenameQ in zip(v_array, os.listdir(directoryQ)):
 
 
 v_array = []
-directoryQ = r'path\211104_MCControl_Det\qvalues'
+directoryQ = r'path/211104_MCControl_Det/qvalues'
 
 for filenameQ in os.listdir(directoryQ):
     Qjson_file = open(directoryQ+'/'+filenameQ,)
@@ -669,9 +680,7 @@ for filenameQ in os.listdir(directoryQ):
 # x: sum(moves_base_power * moves_dmg_multiplier)
 # y: remaining_mon_team - remaining_mon_opponent
 # z: value function
-
-import pandas as pd
-from scipy.interpolate import griddata
+    
 for vvalue, filenameQ in zip(v_array, os.listdir(directoryQ)):
     print(filenameQ)
     x_values, y_values, z_values = vvalue 
@@ -737,8 +746,6 @@ for filenameQ in os.listdir(directoryQ):
 # y: action
 # z: value function
 
-import pandas as pd
-from scipy.interpolate import griddata
 for vvalue, filenameQ in zip(v_array, os.listdir(directoryQ)):
     print(filenameQ)
     x_values, y_values, z_values = vvalue 
