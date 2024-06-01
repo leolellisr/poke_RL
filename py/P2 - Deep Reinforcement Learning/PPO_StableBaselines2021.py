@@ -317,7 +317,7 @@ def parse_args():
         help='if toggled, train will be realized') 
     parser.add_argument('--saved', type=lambda x:bool(strtobool(x)), default=False, nargs='?', const=True,
         help='if toggled, use saved trained model will be realized')     
-    parser.add_argument('--model-folder', type=str, default="/model",
+    parser.add_argument('--model-folder', type=str, default="",
         help='folder of trained model (just for validation)')       
     parser.add_argument('--env', type=str, default="stochastic",    
         help='type of environment (stochastic or deterministic). Define teams. OBS: must change showdown too.')

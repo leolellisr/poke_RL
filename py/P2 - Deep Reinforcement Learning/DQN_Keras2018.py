@@ -3,7 +3,6 @@
 ## DQN Keras 2018: https://github.com/keras-rl/keras-rl/blob/master/rl/agents/dqn.py
 ##
 ## gamma = 0.75
-##
 ## 300k steps (~30 steps per battle. Up to 10k battles. Divided into 30 epochs)
 ##
 
@@ -369,7 +368,7 @@ class DQL_RLPlayer(Gen8EnvSinglePlayer):
                     battle.opponent_active_pokemon.type_2,
                 )
 
-        # We count how many pokemons have not fainted in each team
+        # Counting how many pokemons have not fainted in each team
         n_fainted_mon_team = (
             len([mon for mon in battle.team.values() if mon.fainted])
         )
@@ -389,8 +388,7 @@ class DQL_RLPlayer(Gen8EnvSinglePlayer):
     
         return state
 
-    # Computing rewards
-    
+    # Computing the rewards
     def reward_computing_helper(
             self,
             battle: AbstractBattle,
@@ -402,7 +400,7 @@ class DQL_RLPlayer(Gen8EnvSinglePlayer):
             status_value: float = 0.15,
             victory_value: float = 1.0
     ) -> float:
-        # 1st compute
+        # First compute
         if battle not in self._reward_buffer:
             self._reward_buffer[battle] = starting_value
         current_value = 0
@@ -500,7 +498,7 @@ if __name__ == "__main__":
     NB_EVALUATION_EPISODES = int(NB_TRAINING_EPISODES/3)
     N_STATE_COMPONENTS = 12
 
-    # num of features = num of state components + action
+    # Num of features = Num of state components + action
     N_FEATURES = N_STATE_COMPONENTS + 1
 
     N_OUR_MOVE_ACTIONS = 4

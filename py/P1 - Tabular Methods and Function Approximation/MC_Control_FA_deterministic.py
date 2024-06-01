@@ -202,6 +202,7 @@ class MaxDamagePlayer(Player):
         else:
             return self.choose_random_move(battle)
 
+
 # Definition of Monte Carlo with Function Approximation Player
 class MCPlayer(PlayerMC_FA):
     def choose_move(self, battle):
