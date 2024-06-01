@@ -158,7 +158,7 @@ Ability: Battle Armor
 EVs: 252 HP / 252 Atk / 4 SpD  
 Adamant Nature  
 - Facade  
-- Sleep Talk  
+- Knock Off   
 - Shadow Claw  
 - Rest  
 
@@ -201,6 +201,7 @@ class MaxDamagePlayer(Player):
             return self.create_order(best_move)
         else:
             return self.choose_random_move(battle)
+
 
 # Definition of Monte Carlo with Function Approximation Player
 class MCPlayer(PlayerMC_FA):
