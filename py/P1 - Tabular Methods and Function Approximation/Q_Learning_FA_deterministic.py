@@ -154,7 +154,7 @@ Ability: Battle Armor
 EVs: 252 HP / 252 Atk / 4 SpD  
 Adamant Nature  
 - Facade  
-- Sleep Talk  
+- Knock Off   
 - Shadow Claw  
 - Rest  
 """
