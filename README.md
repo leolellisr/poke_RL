@@ -5,8 +5,6 @@ To use PPO, it is necessary to install the requirements available at [requiremen
 
 For training, it is necessary to run [Pokémon Showdown](https://play.pokemonshowdown.com) on localhost. Showdown is [open-source](https://github.com/smogon/pokemon-showdown.git).
 
-[Presentation video - Project 1 - Tabular Methods and Function Approximation](https://youtu.be/uSZE9gnheSI)
-
 Graphics available at:
 * [Graphs MC Control, MC Control FA, Q-Learning, Q-Learning FA, SARSA($\lambda$) Deterministic, SARSA($\lambda$) FA, DQN and Double-DQN](https://app.neptune.ai/leolellisr/rl-pokeenv)
 * [Graphs SARSA($\lambda$) Stochastic](https://app.neptune.ai/mauricioplopes/poke-env)
