@@ -14,7 +14,7 @@ Notebooks of implemented Tabular Methods and Function Approximation Methods avai
 
 Python files of implemented methods available [here](https://github.com/leolellisr/poke_RL/tree/master/py)
 
-json files of trained tabular methods available [here](https://drive.google.com/drive/folders/1GwNQSsOR0PPtPKlbIy9NzWvTnTtMOD8_?usp=sharing)
+json files of trained methods are available [here](https://drive.google.com/drive/folders/1GwNQSsOR0PPtPKlbIy9NzWvTnTtMOD8_?usp=sharing)
 
 Trained models of deep reinforcement learning methods (DQN-Keras; Double DQN-Keras; PPO2-Stable Baselines) available [here](https://drive.google.com/drive/folders/17_Gn1RWOCh-ekiRhhj40ehPz9nv_d-Fy?usp=sharing)
 
