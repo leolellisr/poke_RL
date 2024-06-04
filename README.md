@@ -9,7 +9,6 @@ Graphics available at:
 * [Graphs MC Control, MC Control FA, Q-Learning, Q-Learning FA, SARSA($\lambda$) Deterministic, SARSA($\lambda$) FA, DQN and Double-DQN](https://app.neptune.ai/leolellisr/rl-pokeenv)
 * [Graphs SARSA($\lambda$) Stochastic](https://app.neptune.ai/mauricioplopes/poke-env)
 * [Graphs PPO](https://github.com/leolellisr/poke_RL/tree/master/images/report/ppo_results)
-* [Graphs REINFORCE - Keras 2018](https://app.neptune.ai/henriqueoliveira/rl-pokeenv/e/RLPOK-4/charts)
  
 Notebooks of implemented Tabular Methods and Function Approximation Methods available [here](https://github.com/leolellisr/poke_RL/tree/master/notebooks)
 
