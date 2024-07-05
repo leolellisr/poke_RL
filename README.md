@@ -249,3 +249,92 @@ Our **stochastic** solutions can be applied to any case and with any team format
 
 We also found some libraries limitations in the use of PPO2, from Stable Baselines (2021). The requirements listed [here](https://github.com/leolellisr/poke_RL/blob/master/requirements_poke_env_ppo.yml) must be used. Neptune cannot be used.
 
+
+# Saving and Loading models
+
+## Tabular models
+
+### Saving models
+
+The tabular models weights are saved as json. 
+
+We use the following function to save the model:
+  
+`# helper function: save to json file
+def save_to_json(path, params, name, value):
+    today_s = str(date.today())
+    n_battle_s = str(params['n_battles'])
+    ... 
+    if not os.path.exists(path):
+        os.makedirs(path)
+    filename = path + "/" + name  today_s + "_n_battles_" + n_battle_s + ...
+    filename=re.sub(r'(?<=\d)[,\.-]','',filename)+".json"
+    file = open(filename, "w")
+    value_dict = dict()
+    for key in value:
+        value_dict[key] = value[key].tolist()
+    json.dump(value_dict, file)
+    file.close()
+`
+The function is used at async function do_battle_training: `save_array_to_json("./name", filename, params['player'])`.
+
+
+### Loading models
+
+After defining your model, you can load the weights with the functions:
+
+`def read_array_from_json(path_dir, filename):
+    full_filename = path_dir + "/" + filename
+    if not os.path.exists(full_filename):
+        return None
+    file = open(full_filename, "r")
+    data = json.load(file)
+    file.close()
+    return data
+
+
+def read_dict_from_json(path_dir, filename):
+    full_filename = path_dir + "/" + filename
+    if not os.path.exists(full_filename):
+        return None
+    file = open(full_filename, "r")
+    data = json.load(file)
+    file.close()
+    return data`
+
+We use the functions at the function do_battle_validation:
+
+` w = np.array(read_array_from_json(path_dir, filename))`
+
+## Deep Reinforcement Learning models
+
+## Saving models
+
+The models were saved in .pb with the function `model.save()`
+
+[Keras reference](https://www.tensorflow.org/tutorials/keras/save_and_load?hl=pt-br)
+
+## Loading models
+
+The SavedModel format is a way to serialize models. Models saved in this format can be restored using tf.keras.models.load_model and are compatible with TensorFlow Serving. 
+
+`# Create and train a new model instance.
+model = create_model()
+model.fit(train_images, train_labels, epochs=5)
+
+# Save the entire model as a SavedModel.
+!mkdir -p saved_model
+model.save('saved_model/my_model')`
+
+The SavedModel format is a directory containing a protobuf binary and a TensorFlow checkpoint. Inspect the saved model directory and reload a fresh Keras model from the saved model:
+
+`# my_model directory
+ls saved_model
+
+# Contains an assets folder, saved_model.pb, and variables folder.
+ls saved_model/my_model
+
+new_model = tf.keras.models.load_model('saved_model/my_model')
+
+# Check its architecture
+new_model.summary()`
