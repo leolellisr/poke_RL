@@ -18,7 +18,7 @@ json files of trained methods are available [here](https://drive.google.com/driv
 
 Trained models of deep reinforcement learning methods (DQN-Keras; Double DQN-Keras; PPO2-Stable Baselines) available [here](https://drive.google.com/drive/folders/17_Gn1RWOCh-ekiRhhj40ehPz9nv_d-Fy?usp=sharing)
 
-## Goal and Motivation
+# Goal and Motivation
 
 * This project aims to employ different reinforcement learning techniques to train agents in a Pokémon battle simulator;
 
@@ -29,7 +29,7 @@ Trained models of deep reinforcement learning methods (DQN-Keras; Double DQN-Ker
   * and the best times to switch Pokémon. 
   * Move's effects: Some moves have [additional effects](https://bulbapedia.bulbagarden.net/wiki/Additional_effect). e.g.: Iron Head have 30% chance of flinching the target (target cannot move in the turn).
 
-##  **The  problem addressed**
+#  **The  problem addressed**
 * [Pokémon](https://www.pokemon.com) is a popular Japanese RPG (Role Playing Game) which stands a world championship every year; 
 * One single [battle](https://bulbapedia.bulbagarden.net/wiki/Pokémon_battle) of Pokémon has two players. Each player has a 6-Pokémon team; 
 * Each Pokémon has:
