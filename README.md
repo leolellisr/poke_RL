@@ -254,13 +254,13 @@ We also found some libraries limitations in the use of PPO2, from Stable Baselin
 
 ## Tabular models
 
-### Saving models
+### Saving Tabular models
 
 The tabular models weights are saved as json. 
 
 We use the following function to save the model:
   
-`# helper function: save to json file
+```# helper function: save to json file
 def save_to_json(path, params, name, value):
     today_s = str(date.today())
     n_battle_s = str(params['n_battles'])
@@ -275,15 +275,15 @@ def save_to_json(path, params, name, value):
         value_dict[key] = value[key].tolist()
     json.dump(value_dict, file)
     file.close()
-`
+```
 The function is used at async function do_battle_training: `save_array_to_json("./name", filename, params['player'])`.
 
 
-### Loading models
+### Loading Tabular models
 
 After defining your model, you can load the weights with the functions:
 
-`def read_array_from_json(path_dir, filename):
+```def read_array_from_json(path_dir, filename):
     full_filename = path_dir + "/" + filename
     if not os.path.exists(full_filename):
         return None
@@ -302,33 +302,39 @@ def read_dict_from_json(path_dir, filename):
     file.close()
     return data`
 
+```
+
 We use the functions at the function do_battle_validation:
 
 ` w = np.array(read_array_from_json(path_dir, filename))`
 
 ## Deep Reinforcement Learning models
 
-## Saving models
+## Saving DRL models
 
 The models were saved in .pb with the function `model.save()`
 
 [Keras reference](https://www.tensorflow.org/tutorials/keras/save_and_load?hl=pt-br)
 
-## Loading models
+## Loading DRL models
 
 The SavedModel format is a way to serialize models. Models saved in this format can be restored using tf.keras.models.load_model and are compatible with TensorFlow Serving. 
 
-`# Create and train a new model instance.
+```# Create and train a new model instance.
 model = create_model()
 model.fit(train_images, train_labels, epochs=5)
 
 # Save the entire model as a SavedModel.
 !mkdir -p saved_model
-model.save('saved_model/my_model')`
+model.save('saved_model/my_model')
 
-The SavedModel format is a directory containing a protobuf binary and a TensorFlow checkpoint. Inspect the saved model directory and reload a fresh Keras model from the saved model:
+```
 
-`# my_model directory
+The SavedModel format is a directory containing a protobuf binary and a TensorFlow checkpoint.
+
+Inspect the saved model directory and reload a fresh Keras model from the saved model:
+
+```# my_model directory
 ls saved_model
 
 # Contains an assets folder, saved_model.pb, and variables folder.
@@ -337,4 +343,4 @@ ls saved_model/my_model
 new_model = tf.keras.models.load_model('saved_model/my_model')
 
 # Check its architecture
-new_model.summary()`
+new_model.summary()```
