@@ -1,9 +1,30 @@
 Code repository with classical reinforcement learning and deep reinforcement learning methods using [poke_env environment](poke-env.readthedocs.io/en/latest/).
 
+# Tabular Methods and Function Approximation implemented
+* Monte Carlo Control First-Visit;
+* Function Approximation with Monte Carlo Control First-Visit;
+* Q-Learning;
+* Function Approximation with Q-Learning;
+* SARSA($\lambda$)
+* Function Approximation with SARSA($\lambda$)
+
+
+# Deep Reinforcement Learning Methods implemented
+* [DQN - Keras 2018](https://notebooks.githubusercontent.com/view/github.com/keras-rl/keras-rl/blob/master/rl/agents/dqn.py)
+* [Double-DQN - Keras 2018](https://notebooks.githubusercontent.com/view/github.com/keras-rl/keras-rl/blob/master/rl/agents/dqn.py)
+* [PPO - Stable Baselines 2021](https://notebooks.githubusercontent.com/view/github.com/Stable-Baselines-Team/stable-baselines/blob/master/stable_baselines/ppo2/ppo2.py)
+* REINFORCE - Keras 2018
+* DQN - Pytorch
+* REINFORCE - Pytorch
+
+# Requirements
+
 It is necessary to install the requirements available at [requirements_poke_env.yml](https://github.com/leolellisr/poke_RL/blob/master/requirements_poke_env.yml).
 To use PPO, it is necessary to install the requirements available at [requirements_poke_env_ppo.yml](https://github.com/leolellisr/poke_RL/blob/master/requirements_poke_env_ppo.yml).
 
 For training, it is necessary to run [Pokémon Showdown](https://play.pokemonshowdown.com) on localhost. Showdown is [open-source](https://github.com/smogon/pokemon-showdown.git).
+
+# Benchmark
 
 Graphics available at:
 * [Graphs MC Control, MC Control FA, Q-Learning, Q-Learning FA, SARSA($\lambda$) Deterministic, SARSA($\lambda$) FA, DQN and Double-DQN](https://app.neptune.ai/leolellisr/rl-pokeenv)
@@ -212,22 +233,6 @@ To adapt our environment to a deterministic setup, we had to establish the follo
   * +15 if we won the battle;
   * -15 if we lost the battle.
 
-# Tabular Methods and Function Approximation implemented
-* Monte Carlo Control First-Visit;
-* Function Approximation with Monte Carlo Control First-Visit;
-* Q-Learning;
-* Function Approximation with Q-Learning;
-* SARSA($\lambda$)
-* Function Approximation with SARSA($\lambda$)
-
-
-# Deep Reinforcement Learning Methods implemented
-* [DQN - Keras 2018](https://notebooks.githubusercontent.com/view/github.com/keras-rl/keras-rl/blob/master/rl/agents/dqn.py)
-* [Double-DQN - Keras 2018](https://notebooks.githubusercontent.com/view/github.com/keras-rl/keras-rl/blob/master/rl/agents/dqn.py)
-* [PPO - Stable Baselines 2021](https://notebooks.githubusercontent.com/view/github.com/Stable-Baselines-Team/stable-baselines/blob/master/stable_baselines/ppo2/ppo2.py)
-* REINFORCE - Keras 2018
-* DQN - Pytorch
-* REINFORCE - Pytorch
 
 # Comparisons
 
