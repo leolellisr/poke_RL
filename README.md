@@ -349,3 +349,12 @@ new_model = tf.keras.models.load_model('saved_model/my_model')
 
 # Check its architecture
 new_model.summary()```
+
+
+## How to cite
+
+
+```
+I Choose You, Reinforcement Learning! Trained RL Agents For Pokémon Battles. Rossi, L.,  Souza, B., Lopes, M., Gudwin, R., Colombini, E. XXIII Simpósio Brasileiro de Jogos e Entretenimento Digital (SBGames 2024). Manaus, Amazonas, Brazil (2024).
+
+```
