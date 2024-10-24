@@ -348,7 +348,8 @@ ls saved_model/my_model
 new_model = tf.keras.models.load_model('saved_model/my_model')
 
 # Check its architecture
-new_model.summary()```
+new_model.summary()
+```
 
 
 ## How to cite
