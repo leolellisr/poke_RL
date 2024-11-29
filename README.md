@@ -1,5 +1,7 @@
 Code repository with classical reinforcement learning and deep reinforcement learning methods using [poke_env environment](poke-env.readthedocs.io/en/latest/).
 
+This project aims to provide an open-source benchmark of trained agents with classic RL methods and Deep Reinforcement Learning (DRL) techniques for Pokémon battles. We also propose a Markov Decision Process (MDP) environment, in which agents are trained and validated. 
+
 # Tabular Methods and Function Approximation implemented
 * Monte Carlo Control First-Visit;
 * Function Approximation with Monte Carlo Control First-Visit;
